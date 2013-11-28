@@ -1,0 +1,87 @@
+package Structures;
+
+import java.util.ArrayList;
+
+import Utility.TextUtility;
+
+public class Relation {
+
+	public String id = "";
+	public String type = "", subType = "";
+	public boolean isBinaryRelation = true; // default
+	public String arg1 = "";
+	public String arg2 = "";
+	public boolean isPositive = false;
+	public ArrayList<String> listOfArgumentEntities = new ArrayList<String>();
+	
+	public static boolean printRelPolarity = false;
+	
+	public String printString() {
+		
+		return this.type + " "
+			+ this.arg1 + " " + this.arg2 + (printRelPolarity ? (" " + (this.isPositive ? "true" : "false")) : "");
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public Relation copy () {
+		
+		Relation newRel = new Relation();
+		
+		newRel.id = id;
+		newRel.type = type;
+		newRel.isBinaryRelation = isBinaryRelation;
+		newRel.arg1 = arg1;
+		newRel.arg2 = arg2;
+		newRel.isPositive = isPositive;
+		newRel.listOfArgumentEntities = listOfArgumentEntities;
+		
+		return newRel; 
+	}
+	
+	public Relation () {
+		
+	} 
+	
+	/**
+	 * 
+	 * @param typeArgsPolarity
+	 * @return
+	 */
+	public void addRelation ( String typeArgsPolarity ) {
+		String[] temp = typeArgsPolarity.split("\\s+");
+		
+		this.type = temp[0]; 
+		this.arg1 = temp[1]; 
+		this.arg2 = temp[2];
+		
+		if ( temp.length > 3 ) {
+			this.isPositive = Boolean.valueOf(temp[3]);
+			printRelPolarity = true;
+		}
+		else
+			// NOTE: keeping compatible with old format
+			this.isPositive = true;
+	}
+	
+	/**
+	 * 
+	 * @param e1
+	 * @param e2
+	 * @param isPositive
+	 * @param type
+	 */
+	public Relation ( Entity e1, Entity e2, boolean isPositive, String type ) {
+		
+		if ( TextUtility.isEmptyString(type) )
+			type = "interaction";
+		
+		this.type = type; 
+		this.arg1 = e1.id; 
+		this.arg2 = e2.id;
+		
+		this.isPositive = isPositive;
+	}
+}

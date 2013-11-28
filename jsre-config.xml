@@ -1,0 +1,541 @@
+<?xml version="1.0"?>
+
+<jsre-config>
+
+	<mapping-list>
+	
+		<!-- GLOBAL CONTEXT KERNEL -->
+		<mapping>
+			<mapping-name>GC</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.GlobalContextMapping</mapping-class>
+	        	<init-param>
+                          <param-name>n-gram</param-name>
+		<!-- default value is 3 -->
+                          <param-value>3</param-value>
+                        </init-param>
+		</mapping>
+		
+
+		<!-- LOCAL CONTEXT KERNEL -->
+		<mapping>
+			<mapping-name>LC</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.LocalContextMapping</mapping-class>
+			<init-param>
+                          <param-name>window-size</param-name>
+		<!-- default value is 2 -->
+                          <param-value>2</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- BAG-OF-WORDS KERNEL -->
+		<mapping>
+			<mapping-name>BOW</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.BagOfWordsMapping</mapping-class>
+			<init-param>
+                          <param-name>n-gram</param-name>
+                          <param-value>3</param-value>
+                        </init-param>
+			
+		</mapping>
+
+
+		<!-- WORDNET KERNEL -->
+		<mapping>
+			<mapping-name>WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.WordNetMapping</mapping-class>
+			<init-param>
+                          <param-name>wordnet-file</param-name>
+                          <param-value>./examples/wordnet/All.txt</param-value>
+                        </init-param>
+		</mapping>
+
+         	
+		<!-- WORDNET DOMAIN KERNEL -->
+		<mapping>
+			<mapping-name>WD</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.WordNetMapping</mapping-class>
+			<init-param>
+                          <param-name>wordnet-file</param-name>
+                          <param-value>./examples/wordnet/domains.txt</param-value>
+                        </init-param>
+		</mapping>
+
+        	
+
+		<!-- SL KERNEL: GC + LC -->
+		<mapping>
+			<mapping-name>SL</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+		</mapping>
+
+		<!-- BOW_SL KERNEL: BOW + GC + LC -->
+		<mapping>
+			<mapping-name>BOW_SL</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+		</mapping>
+
+		<!-- BOW_LC KERNEL: BOW + LC -->
+		<mapping>
+			<mapping-name>BOW_LC</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+		</mapping>
+
+		<!-- BOW_GC KERNEL: BOW + GC -->
+		<mapping>
+			<mapping-name>BOW_GC</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+		</mapping>
+		
+		
+		<!-- BOW + WNA -->
+		<mapping>
+			<mapping-name>BOW_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+		</mapping>
+
+		<!-- LC + WNA -->
+		<mapping>
+			<mapping-name>LC_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+		</mapping>
+
+		<!-- GC + WNA -->
+		<mapping>
+			<mapping-name>GC_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+		</mapping>
+
+		<!-- BOW + LC + WNA -->
+		<mapping>
+			<mapping-name>BOW_LC_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- BOW + GC + WNA -->
+		<mapping>
+			<mapping-name>BOW_GC_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- LC + GC + WNA -->
+		<mapping>
+			<mapping-name>LC_GC_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- BOW + LC + GC + WNA -->
+		<mapping>
+			<mapping-name>BOW_LC_GC_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg4</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+		</mapping>
+
+
+
+		<!-- BOW + WD -->
+		<mapping>
+			<mapping-name>BOW_WD</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- LC + WD -->
+		<mapping>
+			<mapping-name>LC_WD</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- GC + WD -->
+		<mapping>
+			<mapping-name>GC_WD</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- WNA + WD -->
+		<mapping>
+			<mapping-name>WNA_WD</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- BOW + LC + WD -->
+		<mapping>
+			<mapping-name>BOW_LC_WD</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- BOW + GC + WD -->
+		<mapping>
+			<mapping-name>BOW_GC_WD</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- LC + GC + WD -->
+		<mapping>
+			<mapping-name>LC_GC_WD</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- BOW + LC + GC + WD -->
+		<mapping>
+			<mapping-name>BOW_LC_GC_WD</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg4</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+		</mapping>
+
+
+
+		<!-- BOW + WD + WNA -->
+		<mapping>
+			<mapping-name>BOW_WD_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- LC + WD + WNA -->
+		<mapping>
+			<mapping-name>LC_WD_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- GC + WD + WNA -->
+		<mapping>
+			<mapping-name>GC_WD_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- BOW + LC + WD -->
+		<mapping>
+			<mapping-name>BOW_LC_WD</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- BOW + GC + WD + WNA -->
+		<mapping>
+			<mapping-name>BOW_GC_WD_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg4</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- LC + GC + WD + WNA -->
+		<mapping>
+			<mapping-name>LC_GC_WD_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>WD</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+		</mapping>
+
+
+		<!-- BOW + LC + GC + WD + WNA -->
+		<mapping>
+			<mapping-name>BOW_LC_GC_WD_WNA</mapping-name>
+			<mapping-class>org.itc.irst.tcc.sre.kernel.expl.ComboMapping</mapping-class>
+			<init-param>
+                          <param-name>arg1</param-name>
+                          <param-value>GC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg2</param-name>
+                          <param-value>BOW</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg3</param-name>
+                          <param-value>LC</param-value>
+                        </init-param>
+			<init-param>
+                          <param-name>arg4</param-name>
+                          <param-value>WD</param-value>
+			<init-param>
+                          <param-name>arg5</param-name>
+                          <param-value>WNA</param-value>
+                        </init-param>
+                        </init-param>
+		</mapping>
+
+       </mapping-list>
+</jsre-config>
+

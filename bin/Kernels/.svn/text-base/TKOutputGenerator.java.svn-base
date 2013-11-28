@@ -1,0 +1,621 @@
+package Kernels;
+
+import java.io.File;
+import java.util.ArrayList;
+
+import Clause.*;
+import DataProcessor.*;
+import Structures.*;
+import Utility.*;
+
+public class TKOutputGenerator {
+			
+	public static boolean isDT = false, isPST = false, isJSRE = false, isTPWF = false;
+	public static String jsreKernel = "SL", evalType = "", trainingData = "",
+		testData = "", trainingParsedData = "", testParsedData = "", 
+		trainClauseBoundFileName = "", testClauseBoundFileName = "", modelFileName = "";
+	public static int medtType = 3;
+	public static int fold = 0, tr = 0;
+	public static ClauseAnalyser.eDataFilterOption relToBeConsideredForTest = ClauseAnalyser.eDataFilterOption.DATA_ALL,
+		relToBeConsideredForTrain = ClauseAnalyser.eDataFilterOption.DATA_ALL;
+	
+	public static String segmentedFilName = "";
+	
+	
+	static boolean isConsiderNeCat= true;
+	public static boolean isBlindEntity = true;
+		
+	public static void main( String[] args ) throws Exception{
+	/*	
+		args = (" -dt -kjsre SL -medtType 3 -trainParse /vol/marot/groups/qa4mre2012/re_corpora/5_PPI_corpora/all_5_ppi_corpora.parsed.1.6.8 -train" +
+				" /vol/marot/groups/qa4mre2012/re_corpora/5_PPI_corpora/all_5_ppi_corpora.full -testParse /vol/marot/groups/qa4mre2012/re_corpora/5_PPI_corpora/all_5_ppi_corpora.parsed.1.6.8 -test /vol/marot/groups/qa4mre2012/re_corpora/5_PPI_corpora/all_5_ppi_corpora.full" 
+		   		).split("\\s+");
+		//*/		
+		/*args = (" -pst  -kjsre SL -medtType 3 -trainParse /hardmnt/amosoz0/tcc/chowdhury/data/5_PPI_corpora/aimed/aimed.parsed.bllip.complete " +
+				" -train /hardmnt/amosoz0/tcc/chowdhury/data/5_PPI_corpora/aimed/aimed.full " +
+				" -foldFilesFolder /hardmnt/amosoz0/tcc/chowdhury/data/5_PPI_corpora/aimed/folds " 
+				 + "  -icrTest -icrTrain -cbTrain /hardmnt/amosoz0/tcc/chowdhury/data/5_PPI_corpora/aimed/edu_seg/aimed.parsed.bllip.edu"
+				).split("\\s+");
+		
+		//* /
+		args = (" -pst -jsre -wv -kjsre SL -medtType 3 -trainParse /hardmnt/amosoz0/tcc/chowdhury/workspace/5_PPI_corpora/aimed/aimed.parsed.bllip.complete -train /hardmnt/amosoz0/tcc/chowdhury/workspace/5_PPI_corpora/aimed/aimed.full -foldFilesFolder /hardmnt/amosoz0/tcc/chowdhury/workspace/5_PPI_corpora/aimed/folds"
+		).split("\\s+");
+//		*/
+		String foldFilesFolder = "",
+		evalOutFileName = "";
+			
+		for ( int i=0; i<args.length; i++ ) {
+			if ( args[i].equalsIgnoreCase("-ev") )
+				evalType = args[i+1];
+			else if ( args[i].equalsIgnoreCase("-model") )
+				modelFileName = args[i+1];
+			else if ( args[i].equalsIgnoreCase("-dt") )
+				isDT = true;
+			else if ( args[i].equalsIgnoreCase("-pst") )
+				isPST = true;
+			else if ( args[i].equalsIgnoreCase("-jsre") )
+				isJSRE = true;
+			else if ( args[i].equalsIgnoreCase("-wv") )
+				isTPWF = true;
+			else if ( args[i].equalsIgnoreCase("-kjsre") )
+				jsreKernel = args[i+1];
+			else if ( args[i].equalsIgnoreCase("-foldFilesFolder") )
+				foldFilesFolder = args[i+1];
+		
+			else if ( args[i].equalsIgnoreCase("-evalOutFile") )
+				evalOutFileName = args[i+1];
+			else if ( args[i].equalsIgnoreCase("-medtType") )
+				medtType = Integer.valueOf(args[i+1]);
+			
+			else if ( args[i].equalsIgnoreCase("-train") )
+				trainingData = args[i+1];
+			else if ( args[i].equalsIgnoreCase("-test") )
+				testData = args[i+1];
+			else if ( args[i].equalsIgnoreCase("-trainParse") )
+				trainingParsedData = args[i+1];
+			else if ( args[i].equalsIgnoreCase("-testParse") )
+				testParsedData = args[i+1];
+		
+			else if ( args[i].equalsIgnoreCase("-cbTrain") )
+				trainClauseBoundFileName = args[i+1];
+		
+			else if ( args[i].equalsIgnoreCase("-cbTest") )
+				testClauseBoundFileName = args[i+1];
+		
+			else if ( args[i].equalsIgnoreCase("-icrTrain") )
+				relToBeConsideredForTrain = ClauseAnalyser.eDataFilterOption.DATA_WITH_INTRA_CLAUSAL_REL;
+			else if ( args[i].equalsIgnoreCase("-ccrTrain") )
+				relToBeConsideredForTrain = ClauseAnalyser.eDataFilterOption.DATA_WITH_CROSS_CLAUSAL_REL;
+		
+			else if ( args[i].equalsIgnoreCase("-icrTest") )
+				relToBeConsideredForTest = ClauseAnalyser.eDataFilterOption.DATA_WITH_INTRA_CLAUSAL_REL;
+			else if ( args[i].equalsIgnoreCase("-ccrTest") )
+				relToBeConsideredForTest = ClauseAnalyser.eDataFilterOption.DATA_WITH_CROSS_CLAUSAL_REL;
+		}
+		
+		if ( isPST || isDT || isJSRE || isTPWF ) {
+			//-- prepare data
+			String trainDepParsedFile="", trainPsgParsedFile="", testDepParsedFile="", testPsgParsedFile="";
+				
+			if ( isTPWF )
+				FileUtility.writeInFile( CommonUtility.OUT_DIR + "/all_vect_by_pair", "", false);
+				
+			if ( !trainingParsedData.isEmpty() ) {
+				trainDepParsedFile = CommonUtility.OUT_DIR + trainingParsedData.substring(trainingParsedData.lastIndexOf("/"))  + "_dt";
+				trainPsgParsedFile = CommonUtility.OUT_DIR + trainingParsedData.substring(trainingParsedData.lastIndexOf("/")) + "_psg";
+				
+				trainClauseBoundFileName = new TKOutputGenerator().prepareData(trainingParsedData, trainingData, trainClauseBoundFileName);
+			}
+						
+			if ( !testParsedData.isEmpty() ) {
+				testDepParsedFile = CommonUtility.OUT_DIR + testParsedData.substring(testParsedData.lastIndexOf("/")) + "_dt";
+				testPsgParsedFile = CommonUtility.OUT_DIR + testParsedData.substring(testParsedData.lastIndexOf("/")) + "_psg";
+				
+				testClauseBoundFileName = new TKOutputGenerator().prepareData(testParsedData, testData, testClauseBoundFileName);
+			}			
+			
+			// System.out.println(relToBeConsidered);					
+
+			//new Common().readTokenPhrasalCategory();
+			System.out.println("pst=" + isPST + ", dt=" + isDT + ", jsre=" + isJSRE + ", wv=" + isTPWF);			
+
+			FileUtility.writeInFile( CommonUtility.OUT_DIR + "/allEntPair", "", false);
+			
+			String outputDir = foldFilesFolder.isEmpty() ? CommonUtility.OUT_DIR : CommonUtility.OUT_DIR + "/tk";
+			FileUtility.createDirectory(CommonUtility.OUT_DIR + "/tk" );
+			
+			if ( !trainingData.isEmpty() && testData.isEmpty() ) {
+				Sentence.readFullData( trainingData, CommonUtility.OUT_DIR + "/allEntPair");
+				new TKOutputGenerator().crossFoldValidation(foldFilesFolder, trainDepParsedFile, trainPsgParsedFile, 
+						trainingData, outputDir, isPST, isDT, isJSRE, jsreKernel,
+					relToBeConsideredForTrain, relToBeConsideredForTest, trainClauseBoundFileName, isTPWF, isConsiderNeCat, isBlindEntity);
+			}
+				
+			if ( (!trainingData.isEmpty() || !modelFileName.isEmpty() 
+					|| new File(CommonUtility.OUT_DIR + "/model").exists() ) && !testData.isEmpty() ) {
+				Sentence.readFullData(testData, CommonUtility.OUT_DIR + "/allEntPair");
+				new TKOutputGenerator().trainAndTest(modelFileName, trainingData, testData, trainDepParsedFile, trainPsgParsedFile,
+						testDepParsedFile, testPsgParsedFile, outputDir, isPST, isDT, isJSRE, isTPWF, jsreKernel, 
+						relToBeConsideredForTrain, relToBeConsideredForTest, trainClauseBoundFileName, 
+						testClauseBoundFileName, isConsiderNeCat, isBlindEntity);
+			}			
+		}
+		
+		
+		 if ( evalType.equalsIgnoreCase("tk") )
+			 CommonUtility.calculateCrossFoldResult(evalOutFileName);
+		 else if ( evalType.equalsIgnoreCase("full") )
+			 CommonUtility.calculateCrossFoldResult_full(evalOutFileName);
+		 else if ( !evalOutFileName.isEmpty() )
+			 CommonUtility.calculateCrossFoldResult_oth(evalOutFileName);
+
+	}
+	
+		
+	/**
+	 * 	
+	 * @param parsedData
+	 * @param fullData
+	 * @param inClauseBoundFileName
+	 * @throws Exception 
+	 */
+	public String prepareData( String parsedData, String fullData, String inClauseBoundFileName ) throws Exception{
+		
+		//FileUtility.createTmpFile(inClauseBoundFileName + "_merged");
+		
+		new UnifiedFormatDataProcessor().mergeSepratedParsedPartsOfSameSentences( parsedData, fullData);
+				
+		if ( !inClauseBoundFileName.isEmpty() ) {
+			
+			//FileUtility.createTmpFile(inClauseBoundFileName + "_corrected");
+			//FileUtility.createTmpFile(inClauseBoundFileName + "_boun");
+			
+			new EduPostProcessor().fixEduBoundariesOfAllSen(inClauseBoundFileName, inClauseBoundFileName + "_corrected");
+			inClauseBoundFileName = inClauseBoundFileName + "_corrected";
+		
+			// remove
+			segmentedFilName = inClauseBoundFileName;
+			
+			new ClauseAnalyser().findClauseBoundariesOfAllSen(inClauseBoundFileName, 
+					inClauseBoundFileName + "_boun", fullData);
+			inClauseBoundFileName = inClauseBoundFileName + "_boun";
+		}
+		
+		return inClauseBoundFileName;
+	}
+	
+	/**
+	 * 
+	 * @param fullTrainingDataFile
+	 * @param fullTestDataFile
+	 * @param outputFilesFolder
+	 * @param isUsePST
+	 * @param isUseDT
+	 * @param isUseSL
+	 * @param jsreKernel
+	 * @param relToBeConsidered
+	 * @param inClauseBoundFileName
+	 * @throws Exception
+	 */
+	public void trainAndTest( String modelFileName, String fullTrainingDataFile, String fullTestDataFile, 
+			String trainDepParsedFile, String trainPsgParsedFile, String testDepParsedFile, 
+			String testPsgParsedFile, String outputFilesFolder,
+			boolean isUsePST, boolean isUseDT, boolean isUseSL, boolean isUseTPWF, String jsreKernel,
+			ClauseAnalyser.eDataFilterOption relToBeConsideredForTrain, 
+			ClauseAnalyser.eDataFilterOption relToBeConsideredForTest, String trainClauseBoundFileName,
+			String testClauseBoundFileName, boolean isConsiderNeCat, boolean isBlindEntity
+	) throws Exception{
+		
+		if ( modelFileName.isEmpty() && !fullTrainingDataFile.isEmpty() ) {
+			createTkInpfile(fullTrainingDataFile, outputFilesFolder, trainDepParsedFile, trainPsgParsedFile, "train", 
+				false, isUsePST, isUseDT, isUseSL, isUseTPWF, jsreKernel, relToBeConsideredForTrain, trainClauseBoundFileName, false, true,
+				isConsiderNeCat, isBlindEntity);
+			TPWF.writeFeaturesAndPatterns();
+		}
+		else {
+			if ( isUseTPWF )
+				TPWF.readFeaturesAndPatterns();
+		}
+		
+		if ( !fullTestDataFile.isEmpty() )
+			createTkInpfile(fullTestDataFile, outputFilesFolder, testDepParsedFile, testPsgParsedFile, "test", 
+					true, isUsePST, isUseDT, isUseSL, isUseTPWF, jsreKernel, relToBeConsideredForTest, testClauseBoundFileName, true, false,
+					isConsiderNeCat, isBlindEntity);
+	}
+	
+	
+	/**
+	 * 
+	 * @param fullDataFile
+	 * @param outputFilesFolder
+	 * @param depParsedFile
+	 * @param psgParsedFile
+	 * @param fileNamePrefix
+	 * @param isTestFile
+	 * @param isUsePST
+	 * @param isUseDT
+	 * @param isUseSL
+	 * @param isUseTPWF
+	 * @param jsreKernel
+	 * @param relToBeConsidered
+	 * @param inClauseBoundFileName
+	 * @param writeEntPairs
+	 * @param isTrainData
+	 * @throws Exception
+	 */
+	private void createTkInpfile ( String fullDataFile, String outputFilesFolder, 
+			String depParsedFile, String psgParsedFile, String fileNamePrefix, boolean isTestFile,
+		boolean isUsePST, boolean isUseDT, boolean isUseSL, boolean isUseTPWF, String jsreKernel,
+		ClauseAnalyser.eDataFilterOption relToBeConsidered, String inClauseBoundFileName,
+		boolean writeEntPairs, boolean isTrainData, boolean isConsiderNeCat, boolean isBlindEntity
+	) throws Exception{
+		
+		String bioRelExInpFile = null;
+		String modelZipjSRE = outputFilesFolder + "/train.BioRelEx.model";
+				
+		totalPosRel = 0;
+		totalNegRel = 0;
+				
+		FileUtility.writeInFile(CommonUtility.EntPairFileName_PST, "", false);
+		FileUtility.writeInFile(CommonUtility.EntPairFileName_DT, "", false);
+		FileUtility.writeInFile(CommonUtility.EntPairFileName_JSRE, "", false);
+		FileUtility.writeInFile(CommonUtility.EntPairFileName_WV, "", false);
+		FileUtility.writeInFile(CommonUtility.EntPairFileName_TK, "", false);
+		
+		ArrayList<String[]> listTkFilesAndKernelType = new ArrayList<String[]>();
+		boolean isResolveOverlappingEntities = false;//j==0 ? true : false;
+		
+		if ( isUseDT || isUseSL || isUseTPWF ){			
+			
+			if ( isUseDT ){
+				new TKOutputDT().generateTKoutput(Common.isSimplifyEntity, depParsedFile, 
+						fullDataFile, outputFilesFolder + "/" + fileNamePrefix + ".tk.dt" , medtType, isResolveOverlappingEntities,
+						relToBeConsidered, inClauseBoundFileName, writeEntPairs ? CommonUtility.EntPairFileName_DT : "",
+						isConsiderNeCat, isBlindEntity);
+				
+				listTkFilesAndKernelType.add(new String[]{outputFilesFolder + "/" + fileNamePrefix + ".tk.dt", "T"});
+				updateRelCount();
+			}			
+			
+			
+			if ( isUseTPWF ){
+				if ( isTrainData )
+					TPWF.init();
+				
+				new TPWF().generateTPWFvectorOutput(
+						depParsedFile, fullDataFile, outputFilesFolder + "/" + fileNamePrefix + ".tk.wv", medtType, 
+						writeEntPairs ? CommonUtility.EntPairFileName_WV : "",
+								isConsiderNeCat, isBlindEntity, relToBeConsidered, inClauseBoundFileName);
+				
+				listTkFilesAndKernelType.add(new String[]{outputFilesFolder + "/" + fileNamePrefix + ".tk.wv", "V"});
+				updateRelCount();
+			}
+			
+			if ( isUseSL ){
+				bioRelExInpFile = outputFilesFolder + "/" + fileNamePrefix + ".BioRelEx";
+				new TKOutputSL().generateTKoutputForSL(depParsedFile, fullDataFile, 
+						outputFilesFolder + "/" + fileNamePrefix + ".BioRelEx", isResolveOverlappingEntities,
+						relToBeConsidered, inClauseBoundFileName, writeEntPairs ? CommonUtility.EntPairFileName_JSRE : "", isTrainData,
+								psgParsedFile, isConsiderNeCat, isBlindEntity);
+				
+				//listTkFilesAndKernelType.add(new String[]{tmpOutputFileName, "SL"});
+				updateRelCount();
+			}
+		}
+		
+		if ( isUsePST ){			
+			new TKOutputPST().generateTKoutputForPST( psgParsedFile, fullDataFile, 
+					outputFilesFolder + "/" + fileNamePrefix + ".tk.pst", isResolveOverlappingEntities,
+					relToBeConsidered, inClauseBoundFileName, writeEntPairs ? CommonUtility.EntPairFileName_PST : "", depParsedFile);
+			
+			listTkFilesAndKernelType.add(new String[]{ outputFilesFolder + "/" + fileNamePrefix + ".tk.pst", "T"});
+			updateRelCount();
+		}
+			
+		System.out.println("Posi: " +  totalPosRel + "  Neg: " + totalNegRel);
+		
+		FileUtility.writeInFile(outputFilesFolder + "/" + fileNamePrefix + ".tk", 
+				mergeDifferentTkOutputFiles(listTkFilesAndKernelType, bioRelExInpFile, jsreKernel,
+				bioRelExInpFile + ".jsre", modelZipjSRE, isTestFile).toString(), false);				
+	}
+	
+	int totalPosRel = 0, totalNegRel = 0;
+	
+	private void updateRelCount () {
+		totalPosRel = TKOutputPST.totalRelPos > totalPosRel ? TKOutputPST.totalRelPos : totalPosRel;
+		totalNegRel = TKOutputPST.totalRelNeg > totalNegRel ? TKOutputPST.totalRelNeg : totalNegRel;
+		TKOutputPST.totalRelPos = 0;
+		TKOutputPST.totalRelNeg = 0;
+	}
+	
+	/**
+	 * 
+	 * @param foldFilesFolder
+	 * @param depParsedFileName
+	 * @param aimedDataFileName
+	 * @param psgParsedFileName
+	 * @param outputFilesFolder
+	 * @param isUsePST
+	 * @param isUseDT
+	 * @param isUseSL
+	 * @throws Exception
+	 */
+	public void crossFoldValidation( String foldFilesFolder, String depParsedFileName, String psgParsedFileName, 
+			String fullDataFile, String outputFilesFolder,
+			boolean isUsePST, boolean isUseDT, boolean isUseSL, String jsreKernel,
+			ClauseAnalyser.eDataFilterOption relToBeConsideredForTrain, 
+			ClauseAnalyser.eDataFilterOption relToBeConsideredForTest, String inClauseBoundFileName,
+			boolean isUseTPWF, boolean isConsiderNeCat, boolean isBlindEntity
+	) throws Exception{
+		
+		FileUtility.writeInFile(CommonUtility.EntPairFileName_TK, "", false);
+		
+		String bioRelExInpFile = null;
+		String[] filePref = new String[] {"train-203-", "test-203-"};
+				
+		// separate train and test data
+		// read train and test files for n-th fold
+		for ( int i=1; i<=10; i++ ){
+			fold = i;
+			
+			FileUtility.writeInFile(CommonUtility.EntPairFileName_WV, "", false);
+			FileUtility.writeInFile(CommonUtility.EntPairFileName_PST, "", false);
+			FileUtility.writeInFile(CommonUtility.EntPairFileName_DT, "", false);
+			FileUtility.writeInFile(CommonUtility.EntPairFileName_JSRE, "", false);
+			
+			String modelZipjSRE = outputFilesFolder + "/" + filePref[0] + i + ".BioRelEx.model"; 
+				
+			for ( int j=0; j<2; j++ ){
+				totalPosRel = 0;
+				totalNegRel = 0;
+				
+				boolean isTestFile = false;
+				
+				if ( j == 1 )
+					isTestFile = true;
+				
+				String fileName = filePref[j] + i;
+				ArrayList<String> listAbstracts = FileUtility.readFileLines(foldFilesFolder + "/" + fileName);
+				ArrayList<String[]> listTkFilesAndKernelType = new ArrayList<String[]>();
+				boolean isResolveOverlappingEntities = false;//j==0 ? true : false;
+				
+				String tmpFullDataFileName = outputFilesFolder + "/" + fileName + ".tk.full";
+				String tmpDepParsedFileName = outputFilesFolder + "/" + fileName + ".tk.parsed.dep";
+				String tmpPstParsedFileName = outputFilesFolder + "/" + fileName + ".tk.parsed.pst";
+				
+				new TKOutputDT().createFilesFor_i_th_Fold(listAbstracts, fullDataFile, depParsedFileName, 
+						psgParsedFileName, tmpFullDataFileName, tmpDepParsedFileName, tmpPstParsedFileName);
+				
+				//if ( !isTestFile )
+				//	new CueDetector().extractAntiPositiveEntityGovernerWords(tmpFullDataFileName, tmpDepParsedFileName, fullDataFile);
+				
+				if ( isUseDT || isUseSL || isUseTPWF ){
+					
+					if ( isUseDT ){
+						String tmpOutputFileName = outputFilesFolder + "/" + fileName + ".tk.dep";
+						
+						new TKOutputDT().generateTKoutput(Common.isSimplifyEntity, tmpDepParsedFileName, 
+								tmpFullDataFileName, tmpOutputFileName, medtType, isResolveOverlappingEntities,
+								!isTestFile ? relToBeConsideredForTrain : relToBeConsideredForTest, 
+								inClauseBoundFileName, !isTestFile ? "" : CommonUtility.EntPairFileName_DT, isConsiderNeCat, isBlindEntity);
+						listTkFilesAndKernelType.add(new String[]{tmpOutputFileName, "T"});
+					}
+					
+					updateRelCount();
+					
+					if ( isUseTPWF ){
+						if ( !isTestFile )
+							TPWF.init();
+						
+						String tmpWVoutputFileName = outputFilesFolder + "/" + fileName + ".tk.wv";
+						
+						new TPWF().generateTPWFvectorOutput(
+								tmpDepParsedFileName, tmpFullDataFileName, tmpWVoutputFileName, medtType, 
+							!isTestFile ? "" : CommonUtility.EntPairFileName_WV, isConsiderNeCat, isBlindEntity,
+									!isTestFile ? relToBeConsideredForTrain : relToBeConsideredForTest, 
+											inClauseBoundFileName );
+						
+						listTkFilesAndKernelType.add(new String[]{tmpWVoutputFileName, "V"});
+					}
+					
+					updateRelCount();
+					
+					if ( isUseSL ){
+						bioRelExInpFile = outputFilesFolder + "/" + fileName + ".BioRelEx";
+						new TKOutputSL().generateTKoutputForSL(tmpDepParsedFileName, tmpFullDataFileName, 
+								bioRelExInpFile, isResolveOverlappingEntities,
+								!isTestFile ? relToBeConsideredForTrain : relToBeConsideredForTest, 
+								inClauseBoundFileName, !isTestFile ? "" : CommonUtility.EntPairFileName_JSRE, !isTestFile,
+										psgParsedFileName, isConsiderNeCat, isBlindEntity);
+						
+						//listTkFilesAndKernelType.add(new String[]{tmpOutputFileName, "SL"});
+					}
+					
+					updateRelCount();
+				}
+				
+				if ( isUsePST ){
+					String tmpOutputFileName = outputFilesFolder + "/" + fileName + ".tk.pst";					
+					
+					new TKOutputPST().generateTKoutputForPST(tmpPstParsedFileName, tmpFullDataFileName, 
+							tmpOutputFileName, isResolveOverlappingEntities,
+							!isTestFile ? relToBeConsideredForTrain : relToBeConsideredForTest, 
+							inClauseBoundFileName, !isTestFile ? "" : CommonUtility.EntPairFileName_PST, tmpDepParsedFileName);
+					
+					listTkFilesAndKernelType.add(new String[]{tmpOutputFileName, "T"});
+					
+					updateRelCount();
+				}
+				
+				System.out.println("Posi: " +  totalPosRel + "  Neg: " + totalNegRel);
+				
+				if ( j==1 )
+					System.out.println("\n\n");
+				
+				FileUtility.writeInFile(outputFilesFolder + "/" + fileName + ".tk", 
+						mergeDifferentTkOutputFiles(listTkFilesAndKernelType, bioRelExInpFile, jsreKernel,
+						bioRelExInpFile + ".jsre", modelZipjSRE, isTestFile).toString(), false);					
+			}			
+		}
+	}
+	
+
+	/**
+	 * 
+	 * @param listTkFilesAndKernelType
+	 * @param bioRelExInpFileName
+	 * @param jsreKernel
+	 * @param trainJsreFile
+	 * @param modelFile
+	 * @return
+	 * @throws Exception
+	 */
+	public String mergeDifferentTkOutputFiles ( ArrayList<String[]> listTkFilesAndKernelType, 
+			String bioRelExInpFileName, String jsreKernel, String trainJsreFile, 
+			String modelZipjSRE, boolean isTestFile ) throws Exception{
+		
+		String[] allLinesTkOne = new String[0];
+		
+		// merge all tree kernel data
+		for ( int i=0; i<listTkFilesAndKernelType.size(); i++ ){
+			if ( listTkFilesAndKernelType.get(i)[1].equals("T") ) {
+				String[] allLinesTkTwo = normalizeRedundantBrackets(FileUtility.
+					readFileContents(listTkFilesAndKernelType.get(i)[0]).trim().split("\\n"));
+			
+				if ( allLinesTkOne.length == 0 )
+					allLinesTkOne = allLinesTkTwo;
+				else
+					allLinesTkOne = mergeLinesOfTkOutput( allLinesTkOne, allLinesTkTwo);
+			}
+		}
+		 
+		String[] allLinesFVs = new String[0];
+		// if jSRE kernels (i.e., SL, LC or GC) are used
+		if ( bioRelExInpFileName != null ) {
+			if ( !isTestFile )
+				allLinesFVs = 
+					new FeatVecCreatorForSLkernel().getTrainFVforJsreKernel(bioRelExInpFileName,
+						jsreKernel, trainJsreFile, modelZipjSRE)
+					.toString().trim().split("\\n");
+			else
+				allLinesFVs = 
+					new FeatVecCreatorForSLkernel().getTestFVforJsreKernel(bioRelExInpFileName,
+						jsreKernel, trainJsreFile, modelZipjSRE).split("\\n");
+		}
+		
+		
+		// merge vectors
+		for ( int i=0; i<listTkFilesAndKernelType.size(); i++ ){
+			if ( listTkFilesAndKernelType.get(i)[1].equals("V") ) {
+				String vectOut = FileUtility.readFileContents(listTkFilesAndKernelType.get(i)[0]);
+				
+				if ( allLinesFVs != null && allLinesFVs.length > 0 ) {					
+					vectOut = new FeatVecCreatorForSLkernel().mergeLinesOfFVs( allLinesFVs, vectOut.trim().split("\\n")).toString();					
+				}
+				
+				allLinesFVs = vectOut.trim().split("\\n");
+			}
+		}
+		
+		if ( allLinesFVs != null && allLinesFVs.length > 0 ) {
+		
+			if ( allLinesTkOne != null && allLinesTkOne.length > 0 )
+				allLinesTkOne = new FeatVecCreatorForSLkernel().mergeLines(allLinesFVs, allLinesTkOne).toString().split("\\n");
+			else
+				allLinesTkOne = allLinesFVs;
+		}
+				
+		StringBuilder sbOutLines = new StringBuilder();
+		
+		String[] allLinesEntPair = new String[0];
+		// All the entity pair file names should have same and equal number of instances. So, it is ok if anyone of them is read.
+		
+		if ( isJSRE )
+			allLinesEntPair = FileUtility.readFileContents(CommonUtility.EntPairFileName_JSRE).trim().split("\\n");
+		else if ( isPST )
+			allLinesEntPair = FileUtility.readFileContents(CommonUtility.EntPairFileName_PST).trim().split("\\n");
+		else if ( isDT )
+			allLinesEntPair = FileUtility.readFileContents(CommonUtility.EntPairFileName_DT).trim().split("\\n");
+		else if ( isTPWF )
+			allLinesEntPair = FileUtility.readFileContents(CommonUtility.EntPairFileName_WV).trim().split("\\n"); 
+		
+		StringBuilder sbPairs = new StringBuilder();		
+		// detecting whether there is any instance with empty feature set
+		for ( int i=0; i<allLinesTkOne.length; i++ ){
+			String temp = allLinesTkOne[i].replaceAll("\\|[BE][TV]\\|", "").replaceAll("\\s+", "")
+					.replaceAll("\\|\\s+\\|EV\\|", "|");
+						
+			if ( temp.length() > 2 ){
+				sbOutLines.append(allLinesTkOne[i]).append("\n");
+				
+				if ( allLinesEntPair.length > 1 )
+					sbPairs.append(allLinesEntPair[i]).append("\n");
+			}
+		}
+		
+		if ( allLinesEntPair.length > 1 )
+			FileUtility.writeInFile(CommonUtility.EntPairFileName_TK, sbPairs.toString(), true);		
+		
+		return sbOutLines.toString();
+	}
+	
+	
+	/**
+	 * 
+	 * @param output
+	 * @return
+	 */
+	private String[] normalizeRedundantBrackets( String[] allLines ){
+		
+		for ( int i=0; i<allLines.length; i++ ){
+			allLines[i] = allLines[i].replaceAll("\\s+", " ")
+			.replaceAll("\\( \\(", "((").replaceAll(" \\)", ")").replaceAll("\\(\\)", "");			
+		}
+		
+		return allLines;
+	}
+	
+	
+	/**
+	 * 
+	 * @param tkOutOne
+	 * @param tkOutTwo
+	 * @return
+	 */
+	private String[] mergeLinesOfTkOutput( String[] allLinesTkOne, String[] allLinesTkTwo ){
+		
+		String[] mergedVectorForTK = new String[allLinesTkOne.length];
+		
+		if ( allLinesTkOne.length != allLinesTkTwo.length ){
+			System.err.println("Fold = " + fold + ". Size mismatch. " + allLinesTkOne.length + " " + allLinesTkTwo.length );
+			System.exit(0);
+		}
+		
+		for ( int i=0; i<allLinesTkOne.length; i++ ){
+			
+			int k = allLinesTkTwo[i].indexOf(" ");			
+			
+			if ( allLinesTkOne[i].contains("|ET|") ){				
+				if ( k > -1 )
+					mergedVectorForTK[i] = allLinesTkOne[i].replace("|ET|", " ").
+						concat(allLinesTkTwo[i].substring(k)).trim();
+				else
+					mergedVectorForTK[i] = allLinesTkOne[i].replace("|ET|", " |BT| |ET|").trim();
+			}
+			else {
+				if ( k > -1 )
+					mergedVectorForTK[i] = allLinesTkOne[i].concat(" |BT| ").
+					concat(allLinesTkTwo[i].substring(k)).trim();
+				else
+					mergedVectorForTK[i] = allLinesTkOne[i].concat(" |BT| |BT| |ET|").trim();
+			}
+			
+			mergedVectorForTK[i] = mergedVectorForTK[i].replaceAll("\\s+", " ");
+		}
+		
+		return mergedVectorForTK;
+	}
+
+
+	
+}

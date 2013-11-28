@@ -1,0 +1,708 @@
+package Kernels;
+
+import java.io.IOException;
+import java.util.ArrayList;
+
+import Clause.ClauseAnalyser;
+import Structures.*;
+import Utility.*;
+
+public class TPWF {
+
+	/**
+	 * If a sentence matches one of the relation patterns then -
+	 * - Construct the dependency graph of the sentence
+	 * - All nodes in the shortest path connecting the target pairs must be retained
+	 * "Isolation of P1 and its binding specificity with P2" 
+	 * - All nodes in the shortest path connecting the trigger word and target pairs must be retained
+	 * "P1 activates P2 and inhibits P3"
+	 * - All nodes satisfying the 3 rules of MEDT kernel must be retained
+	 * - All negative nodes which are directly connected to the target pairs or trigger word or to their immediate parents must be retained. 
+	 * 		In the latter case, the corresponding parent should be also kept. 
+	 * - All the other nodes would be removed.
+	 * - Lets call it "candidate graph"
+	 * 
+	 * - Construct feature set using e-walks and v-walks for the candidate graph
+	 */
+	
+	/*
+	 * we change the pos of target entities in ENT_T, but leave the pos of other words as it is
+	 * we consider e1-v-e2 and e2-v-e1 both as the same feature 
+	 */
+
+	public static ArrayList<String> listOfGlobalFeatures = new ArrayList<String>();
+	public static ArrayList<Integer> listOfGlobalFeatWeight = new ArrayList<Integer>();
+	
+	String vectOutFile = "all_vect_by_pair";
+	
+	
+	public static void init() {
+		PatternsDepRelFromGraph.listOfAllPatterns = new ArrayList<ArrayList<String>>();
+		PatternsDepRelFromGraph.listOfLabelsForPatterns = new ArrayList<Boolean>();
+		
+		listOfGlobalFeatures = new ArrayList<String>();
+		listOfGlobalFeatWeight = new ArrayList<Integer>();
+	}
+	
+	static String featureFile = CommonUtility.OUT_DIR + "/tpwfFeatures";
+	static String patternFile = CommonUtility.OUT_DIR + "/tpwfPatterns";
+	
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	public static void writeFeaturesAndPatterns () throws IOException {
+		StringBuilder sb = new StringBuilder();
+		for ( int i=0; i<listOfGlobalFeatures.size(); i++ )
+			sb.append(listOfGlobalFeatures.get(i) + "\t" + listOfGlobalFeatWeight.get(i) + "\n");
+		
+		FileUtility.writeInFile( featureFile, sb.toString(), false);
+		
+		sb = new StringBuilder();
+		for ( int i=0; i<PatternsDepRelFromGraph.listOfLabelsForPatterns.size(); i++ ) {
+			sb.append(PatternsDepRelFromGraph.listOfLabelsForPatterns.get(i) + "\t");
+			for ( int j=0; j<PatternsDepRelFromGraph.listOfAllPatterns.get(i).size()-1; j++ ) {
+				sb.append(PatternsDepRelFromGraph.listOfAllPatterns.get(i).get(j) + "###");
+			}
+			
+			sb.append(PatternsDepRelFromGraph.listOfAllPatterns.get(i).get(PatternsDepRelFromGraph.listOfAllPatterns.get(i).size()-1));			
+			sb.append("\n");
+		}
+		
+		FileUtility.writeInFile( patternFile, sb.toString(), false);
+	}
+	
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	public static void readFeaturesAndPatterns () throws IOException {
+		init();
+		ArrayList<String> listOfLines = FileUtility.readNonEmptyFileLines(featureFile);
+		
+		for ( int i=0; i<listOfLines.size(); i++ ) {
+			String[] str = listOfLines.get(i).split("\t");
+			listOfGlobalFeatures.add(str[0]);
+			listOfGlobalFeatWeight.add(Integer.valueOf(str[1]));
+		}
+		
+		listOfLines = FileUtility.readNonEmptyFileLines(patternFile);
+		
+		for ( int i=0; i<listOfLines.size(); i++ ) {
+			String[] str = listOfLines.get(i).split("\t");
+			PatternsDepRelFromGraph.listOfLabelsForPatterns.add(Boolean.valueOf(str[0]));
+			str = str[1].split("###");
+			PatternsDepRelFromGraph.listOfAllPatterns.add(DataStrucUtility.arrayToList(str));
+		}
+	}
+	
+	/**
+	 * 
+	 * @param isSimplifyEntity
+	 * @param parsedFileName
+	 * @param aimedDataFileName
+	 * @param outputFile
+	 * @param medtType
+	 * @param isRemoveOverlappingEntities
+	 * @throws Exception
+	 */
+	public void generateTPWFvectorOutput( String depParsedFileName, String fullDataFileName,
+			String outputFile, int medtType, String entPairFileName, boolean isConsiderNeCat, boolean isBlindEntity,				
+			ClauseAnalyser.eDataFilterOption relToBeConsidered, String inClauseBoundFileName ) throws Exception{
+		
+		boolean useWalkFeatures = true, 
+				useRegExPatterns = false, 
+				useDepPatterns = true, 
+				useTriggers = true, 
+				useNegativeCues = true,
+						
+				discardDepRelUsingProbabilityInReducedGraph = false,
+				triggersFromWholeRGinsteadOfLCP = false;				
+		
+		String str = "";
+		if ( discardDepRelUsingProbabilityInReducedGraph )
+			str += "discardDepRelUsingProbabilityInReducedGraph ";
+		if ( useWalkFeatures )
+			str += "WalkFeatures ";
+		if ( useRegExPatterns )
+			str += "RegExPatterns ";
+		if ( useDepPatterns )
+			str += "DepPatterns ";
+		if ( useTriggers )
+			str += "Triggers ";
+		if ( triggersFromWholeRGinsteadOfLCP )
+			str += "TriggersFromWholeRGinsteadOfLCP ";
+		if ( useNegativeCues )
+			str += "NegativeCues ";
+		
+		System.out.println(str);
+		
+		medtType = 3;
+		ArrayList<Sentence> listSentence = Sentence.readFullData(fullDataFileName);
+		ArrayList<DependencyParseOfSen> listDepParseOfAllSen = DependencyParseOfSen.readDepParseForAllSen(depParsedFileName);
+	
+		PatternsDepRelFromGraph clsWVG = new PatternsDepRelFromGraph();
+		if ( PatternsDepRelFromGraph.listOfAllPatterns.size() == 0 ) {
+			clsWVG.collectAllDepRelPatternsFromTrainData(listSentence, listDepParseOfAllSen, discardDepRelUsingProbabilityInReducedGraph);
+		}
+		
+		int[][] arrClauseBoundOfSen = new TKOutputPST().getClauseBoundOfAllSen(inClauseBoundFileName);
+		
+		FileUtility.writeInFile( outputFile, "", false);
+		
+		// read trigger word list
+		Triggers.readTriggersAndNegativeWord();
+		
+		String line = "";
+		for ( int s=0; s<listSentence.size(); s++ ) {			
+
+			Sentence objCurSen = listSentence.get(s);
+			DependencyParseOfSen objDepParseOfSen = listDepParseOfAllSen.get(s);
+			objCurSen.detectBoundariesAndLemmas(objDepParseOfSen.tokAndPos);
+						
+			// initialize graph
+			DependencyGraph graph = new DependencyGraph( objCurSen.arrWordAndPosByParser,
+					DataStrucUtility.listToStringArray(objDepParseOfSen.listOfDeps), objCurSen.getWordsAndNE());
+			
+			int senIndex = TKOutputPST.listAllSenIDs.indexOf(objCurSen.senID);
+			
+			// only those sentences are taken into account which has more than one entity annotations
+			if ( objCurSen.listOfEntities.size() > 1 ) {
+				line = generateVectorForSen( objCurSen, objDepParseOfSen.listOfDeps,
+						medtType, entPairFileName, graph, discardDepRelUsingProbabilityInReducedGraph,
+						useWalkFeatures, useRegExPatterns, useDepPatterns, useTriggers, triggersFromWholeRGinsteadOfLCP,
+						useNegativeCues, isConsiderNeCat, isBlindEntity,
+						relToBeConsidered, senIndex > 0 ? arrClauseBoundOfSen[senIndex] : null,
+						objCurSen.getDependencyTree(objDepParseOfSen) );
+					
+				FileUtility.writeInFile( outputFile, line, true);
+			}
+		}
+		
+	}
+	
+		
+	/**
+	 * 
+	 * @param tokenWithPos
+	 * @param senID
+	 * @param sentence
+	 * @param listEnt
+	 * @param listRel
+	 * @param listDependencies
+	 * @param medtType
+	 * @param entPairFileName
+	 * @return
+	 * @throws IOException
+	 */
+	private String generateVectorForSen( Sentence objCurSen, 
+				ArrayList<String> listDependencies, 
+				int medtType, String entPairFileName, DependencyGraph graph, boolean discardDepRelUsingProbabilityInReducedGraph,
+				boolean useWalkFeatures, boolean useRegExPatterns, boolean useDepPatterns, boolean useTriggers,
+				boolean triggersFromWholeRGinsteadOfLCP, boolean useNegativeCues, boolean isConsiderNeCat, boolean isBlindEntity,				
+				ClauseAnalyser.eDataFilterOption relToBeConsidered, int[] arrClauseBoundOfSen, DependencyTree dt ) throws IOException{
+			
+		String output = "";
+		
+		// for each pair of entities, find minimal subtrees and output it with 1 or 0
+		// 1 represents there exists a relation between those entities
+		for ( int r=0; r < objCurSen.listRels.size(); r++ ){
+		
+			Entity e1 = objCurSen.getEntityById(objCurSen.listRels.get(r).arg1);
+			Entity e2 = objCurSen.getEntityById(objCurSen.listRels.get(r).arg2);
+		
+			// checking relation type
+			if ( TKOutputPST.skipInstance(arrClauseBoundOfSen, relToBeConsidered, e1, e2, objCurSen, dt) )
+				continue;
+			
+			String str = getInpVectFromDepGraphOfPairsAndTrigger(objCurSen.listRels.get(r), objCurSen, listDependencies, medtType, 
+					graph, discardDepRelUsingProbabilityInReducedGraph,
+					useWalkFeatures, useRegExPatterns, useDepPatterns, useTriggers, triggersFromWholeRGinsteadOfLCP,
+					useNegativeCues, isConsiderNeCat, isBlindEntity, e1, e2).trim();
+			
+			//if ( !str.isEmpty() ) 
+			{
+				output += TKOutputDT.getOutputForSingleInstance( str + "\n", objCurSen.listRels.get(r).isPositive);
+			}
+			
+			if ( !TextUtility.isEmptyString(entPairFileName) ) {
+				if ( !str.isEmpty() )
+					FileUtility.writeInFile(entPairFileName, objCurSen.listRels.get(r).printString() + "\tFOUND\n", true);
+				else {
+			//		FileUtility.writeInFile(entPairFileName, objCurSen.listOfEntities.get(i).id + "\t" + objCurSen.listOfEntities.get(j).id + "\tNOT_FOUND\n", true);
+					//System.out.println( senID + ": " + ent1 + " || " + ent2);
+				}
+			}
+		}
+				
+		return output;
+	}
+	
+	/**
+	 * 
+	 * @param isSimplifyEntity
+	 * @param tokenWithPos
+	 * @param senID
+	 * @param sentence
+	 * @param listEnt
+	 * @param listRel
+	 * @param listDependencies
+	 * @param medtType
+	 * @param isResolveOverlappingEntities
+	 * @param relToBeConsidered
+	 * @param arrClauseBoundOfSen
+	 * @return
+	 * @throws IOException 
+	 */
+	public String getInpVectFromDepGraphOfPairsAndTrigger( Relation objRel, Sentence objCurSen, 
+			ArrayList<String> listDependenciesOfSen, int medtType,
+			DependencyGraph graph, boolean discardDepRelUsingProbabilityInReducedGraph,
+			boolean useWalkFeatures, boolean useRegExPatterns, boolean useDepPatterns, boolean useTriggers,
+			boolean triggersFromWholeRGinsteadOfLCP, boolean useNegativeCues, boolean isConsiderNeCat, boolean isBlindEntity,
+			Entity e1, Entity e2
+	) throws IOException{
+	
+		if ( TextUtility.hasOverlap( e1.boundaries, e2.boundaries) )
+			return "";
+				
+		FileUtility.writeInFile( vectOutFile, 
+				e1.id + " " + e1.name
+				+ "\t" + e2.id + " " + e2.name + "\n\n", true);
+		
+		FileUtility.writeInFile( vectOutFile, 
+				objCurSen.text + "\n\n", true);
+		
+		objCurSen.detectBoundariesAndLemmas(objCurSen.arrWordAndPosByParser);
+		
+		// initialize dependency graph of the sentence
+		DependencyTree dt = new DependencyTree(objCurSen.arrWordAndPosByParser, 
+				DataStrucUtility.listToStringArray(listDependenciesOfSen), objCurSen.getWordsAndNE());
+		 
+		DepTreeNode dn = null;
+		
+		// All nodes in the shortest path connecting the target pairs must be retained
+		// All nodes satisfying the 3 rules of MEDT kernel must be retained
+		dn = dt.findMinimalSubTreeWithEntities(false, e1.name, e1.boundaries,
+							e2.name, e2.boundaries, isConsiderNeCat, medtType, isBlindEntity, objCurSen.arrBoundariesByWordIndexes);
+		
+		/*
+		 *  If there is no minimal subtree/path between target entities then we do not consider to generate
+		 *  instance for training/testing.
+		 */
+		if ( dn == null )
+			return "";
+
+		ArrayList<Integer> listFeatIndsOfCurInp = new ArrayList<Integer>(), listFeatCountOfCurInp = new  ArrayList<Integer>();
+		
+		// Construct feature set using e-walks and v-walks
+		if ( dn != null && useWalkFeatures )
+			createFeaturesFromInputGraph( dt, dn, "", listFeatIndsOfCurInp, listFeatCountOfCurInp, new ArrayList<Integer>(), isConsiderNeCat);
+		
+		if ( useRegExPatterns ) {
+			matchPPIpatternOnSentence(objCurSen.text, e1.name, e2.name, listFeatIndsOfCurInp, listFeatCountOfCurInp);
+			matchPPIpatternOnSentence(objCurSen.text, e2.name, e1.name, listFeatIndsOfCurInp, listFeatCountOfCurInp);
+		}
+		
+				
+		ArrayList<String> listOfDepRelsInReducedGraph = new ArrayList<String>();
+		ArrayList<ArrayList<Integer>> listNodesAndLCP  = new PatternsDepRelFromGraph().extractDepRelsInReducedGraph(graph, 
+				objRel, objCurSen, listOfDepRelsInReducedGraph, discardDepRelUsingProbabilityInReducedGraph, false);
+		
+		
+		if ( useDepPatterns )
+			extractDepPatternFeatures(listOfDepRelsInReducedGraph, listFeatIndsOfCurInp, listFeatCountOfCurInp);
+		
+		/*
+		 *  NOTE: listNodesAndLCP has two elements - (0) all the nodes in Reduced graph, and (1) the least common parents (LCPs) in Reduced graph.
+		 *  Empirical results (on HPRD50) show that using all nodes rather than LCPs provide better result.
+		 */
+		if ( listNodesAndLCP == null )
+			listNodesAndLCP = new ArrayList<ArrayList<Integer>>();
+		
+		if ( useTriggers && listNodesAndLCP.size() > 0 ) {
+			if ( triggersFromWholeRGinsteadOfLCP )
+				for ( int i=0; i<listNodesAndLCP.get(0).size(); i++ )
+					addTriggerWordFeatures(graph.allNodesByWordIndex[listNodesAndLCP.get(0).get(i)].word, listFeatIndsOfCurInp, listFeatCountOfCurInp);
+			else
+				for ( int i=0; i<listNodesAndLCP.get(1).size(); i++ )
+					addTriggerWordFeatures(graph.allNodesByWordIndex[listNodesAndLCP.get(1).get(i)].word, listFeatIndsOfCurInp, listFeatCountOfCurInp);
+		}
+		
+		if ( useNegativeCues && listNodesAndLCP.size() > 0 )
+			for ( int i=0; i<listNodesAndLCP.get(0).size(); i++ )
+				addNegativeWordFeatures( graph.allNodesByWordIndex[listNodesAndLCP.get(0).get(i)].word, listFeatIndsOfCurInp, listFeatCountOfCurInp);
+		
+		// sort
+		for ( int i=0; i < listFeatIndsOfCurInp.size()-1; i++ ) {
+			for ( int k=i+1; k < listFeatIndsOfCurInp.size(); k++ ) {
+				if ( listFeatIndsOfCurInp.get(k) < listFeatIndsOfCurInp.get(i) ) {
+					int t = listFeatIndsOfCurInp.get(k);
+					listFeatIndsOfCurInp.set(k, listFeatIndsOfCurInp.get(i));
+					listFeatIndsOfCurInp.set(i, t);
+					
+					t = listFeatCountOfCurInp.get(k);
+					listFeatCountOfCurInp.set(k, listFeatCountOfCurInp.get(i));
+					listFeatCountOfCurInp.set(i, t);
+				}
+			}
+		}
+		
+		StringBuilder sbOutputVect = new StringBuilder();
+		
+		// convert to vector
+		for ( int i=0; i < listFeatIndsOfCurInp.size(); i++ ) {
+			FileUtility.writeInFile( vectOutFile, listOfGlobalFeatures.get(listFeatIndsOfCurInp.get(i)) + "\n", true);
+			sbOutputVect.append((listFeatIndsOfCurInp.get(i)+1
+					) + ":" + 
+					(listFeatCountOfCurInp.get(i)*listOfGlobalFeatWeight.get(listFeatIndsOfCurInp.get(i))) + " ");
+		}
+		
+		FileUtility.writeInFile( vectOutFile, "==================================================\n", true);
+		
+		return sbOutputVect.toString();
+	}
+	
+	
+	/**
+	 * Add new feature in local and global list if already doesn't exist. 
+	 * 
+	 * @param feature
+	 * @param listFeatIndsOfCurInp
+	 * @param listFeatCountOfCurInp
+	 */
+	private void addNewFeatureInList ( String[] feature,
+		ArrayList<Integer> listFeatIndsOfCurInp, ArrayList<Integer> listFeatCountOfCurInp, int weight ) {
+		
+		int ind = -1;
+		
+		for ( int i=0; ind < 0 && i<feature.length; i++ )
+			ind = listOfGlobalFeatures.indexOf(feature[i]);
+		
+		if ( ind < 0 ) {
+			ind = listOfGlobalFeatures.size();
+			listOfGlobalFeatures.add(feature[0]);
+			listOfGlobalFeatWeight.add(weight);
+		}
+		
+		int indLoc = listFeatIndsOfCurInp.indexOf(ind);
+		if ( indLoc < 0 ) {
+			listFeatIndsOfCurInp.add(ind);
+			listFeatCountOfCurInp.add(1);
+		}
+		else 
+			listFeatCountOfCurInp.set(indLoc, listFeatCountOfCurInp.get(indLoc)+1);
+	}
+
+	/**
+	 * 
+	 * @param listOfDepRelsInReducedGraph
+	 * @param listFeatIndsOfCurInp
+	 * @param listFeatCountOfCurInp
+	 */
+	public void extractDepPatternFeatures ( ArrayList<String> listOfDepRelsInReducedGraph, 
+			ArrayList<Integer> listFeatIndsOfCurInp, ArrayList<Integer> listFeatCountOfCurInp  ) {
+				
+		ArrayList<Integer> listOfMatchedPatternIndexes = new ArrayList<Integer>();
+		
+		for ( int i=0; i<PatternsDepRelFromGraph.listOfAllPatterns.size(); i++ ) {
+			
+			if ( DataStrucUtility.hasListOneAllElementsOfListTwo(listOfDepRelsInReducedGraph, 
+					PatternsDepRelFromGraph.listOfAllPatterns.get(i) ) )
+				listOfMatchedPatternIndexes.add(i);
+		}
+		
+		for ( int i=0; i<listOfMatchedPatternIndexes.size(); i++ ) {
+			// add a feature indicating that what dep pattern it is
+			String[] feature = new String[] {
+					"DepPattern-" + listOfMatchedPatternIndexes.get(i) + "@",
+			};
+
+			addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, 1);
+		}
+	}
+	static int cc=0;
+	/**
+	 * 
+	 * @param dn
+	 * @param prevRelType
+	 * @param listFeatIndsOfCurInp
+	 * @param listFeatCountOfCurInp
+	 * @throws IOException 
+	 */
+	private void createFeaturesFromInputGraph ( DependencyTree dt, DepTreeNode dn, String prevRelType, 
+			ArrayList<Integer> listFeatIndsOfCurInp, ArrayList<Integer> listFeatCountOfCurInp, 
+			ArrayList<Integer> listOfNodeTraversed, boolean isConsiderNeCat  ) throws IOException {
+		// TODO: what will happen if there is multiple root?
+		
+		int weight = 1;
+	//	cc++;
+		listOfNodeTraversed.add(dn.wordIndex);
+		
+		if ( TKOutputGenerator.isBlindEntity 
+				&& dn.word.matches( BlindText.blindPrefix + "[0-9]+" + BlindText.blindSuffix) )
+			dn.lemma = "ENTITYother";
+		
+		//System.out.println(cc);
+		
+		String[] feature = new String[0];
+	//*
+		if ( !TextUtility.isEmptyString(dn.getNEcategory()) && dn.getNEcategory().contains(DepTreeNode.targetNEcatPrefix) ) {
+			
+			if ( isConsiderNeCat ) {
+				feature =  new String[] { dn.getNEcategory() };
+				addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, weight);
+			}
+				
+			for ( int i=dn.wordIndex-1; i>=0 && i<=dn.wordIndex+1 && i<dt.allNodesByWordIndex.length; i++ ){
+				if ( i != dn.wordIndex ) {
+					feature =  new String[] {
+							dt.allNodesByWordIndex[i].lemma + "$" + (i-dn.wordIndex),
+					};
+					
+					addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, weight);
+				}
+			}
+		}
+		
+		//*/
+		// BFS traversal
+		
+		for ( int i=0; i< dn.childrenWordIndex.size(); i++ ){
+		//*	
+			if ( TKOutputGenerator.isBlindEntity
+					&& dn.children.get(i).word.matches( BlindText.blindPrefix + "[0-9]+" + BlindText.blindSuffix) )
+				dn.children.get(i).lemma = "ENTITYother";
+			/*
+			// v-walk
+			feature =  new String[] {
+					dn.lemma + "@" + dn.relNamesWithChildren.get(i) + "@" + dn.children.get(i).lemma,
+					dn.children.get(i).lemma + "@" + dn.relNamesWithChildren.get(i) + "@" + dn.lemma
+			};
+			//addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp);
+			*/
+			
+		//	FileUtility.writeInFile( vectOutFile, feature[0] + "\n", true);
+			
+			feature =  new String[] {
+					dn.pos + "@" + dn.relNamesWithChildren.get(i) + "@" + dn.children.get(i).pos,
+					dn.children.get(i).pos + "@" + dn.relNamesWithChildren.get(i) + "@" + dn.pos
+				};				
+			addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, weight);
+		//*/
+			// e-walk
+			if ( !prevRelType.isEmpty() ) {
+				feature = new String[] {
+					prevRelType + "#" + dn.pos + "#" + dn.relNamesWithChildren.get(i),
+					dn.relNamesWithChildren.get(i) + "#" + dn.pos + "#" + prevRelType
+				};
+				addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, weight);
+				
+				feature = new String[] {
+						prevRelType + "#" + dn.lemma + "#" + dn.relNamesWithChildren.get(i),
+						dn.relNamesWithChildren.get(i) + "#" + dn.lemma + "#" + prevRelType
+				};
+				addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, weight);
+			}
+			
+
+			for ( int k=i+1; k< dn.childrenWordIndex.size(); k++ ){
+
+				if ( TKOutputGenerator.isBlindEntity
+						&& dn.children.get(k).word.matches( BlindText.blindPrefix + "[0-9]+" + BlindText.blindSuffix) )
+					dn.children.get(k).lemma = "ENTITYother";
+				
+				// add e-walk for the siblings WITHOUT taking lexical order in consideration
+				feature = new String[] {
+						dn.relNamesWithChildren.get(i) + "#" + dn.pos + "#" + dn.relNamesWithChildren.get(k),
+						dn.relNamesWithChildren.get(k) + "#" + dn.pos + "#" + dn.relNamesWithChildren.get(i)
+					};
+				addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, weight);
+					
+				feature = new String[] {
+							dn.relNamesWithChildren.get(i) + "#" + dn.lemma + "#" + dn.relNamesWithChildren.get(k),
+							dn.relNamesWithChildren.get(k) + "#" + dn.lemma + "#" + dn.relNamesWithChildren.get(i),
+					};
+				addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, weight);
+				/*
+				// 3-gram of siblings and parent
+				feature = new String[] {
+						dn.children.get(i).lemma + "#" + dn.lemma + "#" + dn.children.get(k).lemma,
+						dn.children.get(k).lemma + "#" + dn.lemma + "#" + dn.children.get(i).lemma
+					};
+				addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp);
+				/*
+				feature = new String[] {
+						dn.children.get(i).pos + "#" + dn.pos + "#" + dn.children.get(k).pos,
+						dn.children.get(k).pos + "#" + dn.pos + "#" + dn.children.get(i).pos
+					};
+				addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp);
+				*/
+			}
+		}
+		
+		// for grand children
+		for ( int i=0; i< dn.childrenWordIndex.size(); i++ ){
+			if ( !listOfNodeTraversed.contains(dn.childrenWordIndex.get(i)) )
+				createFeaturesFromInputGraph( dt, dn.children.get(i), dn.relNamesWithChildren.get(i), 
+						listFeatIndsOfCurInp, listFeatCountOfCurInp, listOfNodeTraversed, isConsiderNeCat);
+		}
+		
+		// for parents
+		for ( int i=0; dn.parents != null && i< dn.parents.size(); i++ ) {
+			/*
+			for ( int c=0; c< dn.childrenWordIndex.size(); c++ ){
+				// 3-gram
+				feature = new String[] {
+						dn.parents.get(i).lemma + "#" + dn.lemma + "#" + dn.children.get(c).lemma,
+						//dn.children.get(c).lemma + "#" + dn.lemma + "#" + dn.parents.get(i).lemma
+					};
+				addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp);
+			}
+			*/
+			if ( !listOfNodeTraversed.contains(dn.parents.get(i).wordIndex) ) {				
+				createFeaturesFromInputGraph( dt, dn.parents.get(i), "", 
+						listFeatIndsOfCurInp, listFeatCountOfCurInp, listOfNodeTraversed, isConsiderNeCat);
+			}
+		}
+	}
+	
+
+	/**
+	 * 
+	 * @param word
+	 * @param listFeatIndsOfCurInp
+	 * @param listFeatCountOfCurInp
+	 */
+	private void addTriggerWordFeatures ( String word, 
+			ArrayList<Integer> listFeatIndsOfCurInp, ArrayList<Integer> listFeatCountOfCurInp ) {
+		
+		int tgCharIndex = Triggers.listOf1stChar.indexOf(word.charAt(0));
+		
+		if ( tgCharIndex >= 0 ) {
+			int tgWordIndex = Triggers.listOfTriggers.get(tgCharIndex).indexOf(word);
+		
+			if ( tgWordIndex >= 0 ) {
+				// add a feature indicating that what trigger word it is
+				String[] feature = new String[] {
+						"Trigger-" + Triggers.listOfTriggerLemmas.get(tgCharIndex).get(tgWordIndex) + "@",
+				};
+
+				addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, 1);
+//*				
+				// add a feature indicating that there is a trigger word
+				feature = new String[] {
+						"HasTriggerWord@",
+				};
+
+				addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, 1);
+//				*/
+			}
+		}
+	}
+	
+	
+	/**
+	 * 
+	 * @param word
+	 * @param listFeatIndsOfCurInp
+	 * @param listFeatCountOfCurInp
+	 */
+	private void addNegativeWordFeatures ( String word, 
+			ArrayList<Integer> listFeatIndsOfCurInp, ArrayList<Integer> listFeatCountOfCurInp ) {
+				
+		if ( Triggers.listOfNegativeWords.contains(word) ) {
+
+				// add a feature indicating that there is a negative word in the reduced graph
+			String[] feature = new String[] {
+					"HasNegWord@$",
+			};
+
+			addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, 1);
+		}
+		
+	}
+
+	
+	/**
+	 * NOTE: This degrades performance when tested on LLL and HPRD50.
+	 * 
+	 * @param sen
+	 * @param ent1
+	 * @param ent2
+	 * @param listFeatIndsOfCurInp
+	 * @param listFeatCountOfCurInp
+	 */
+	private void addFeaturesForOtherEntInside ( String sen, String ent1, String ent2,
+			ArrayList<Integer> listFeatIndsOfCurInp, ArrayList<Integer> listFeatCountOfCurInp ) {
+				
+		String[] feature = new String[] {
+				"HasOtherEntityInBetween#",
+		};
+		
+		if ( sen.matches(".*" + ent1 + ".*" + BlindText.blindPrefix + "[0-9]+" + BlindText.blindSuffix + ".*" + ent2 + ".*") )
+			addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, 1);
+		
+		feature = new String[] {
+				"OtherEntityIsCojoined#",
+		};
+		
+		if ( sen.matches(".*" + ent1 + ".*" + BlindText.blindPrefix + "[0-9]+" + BlindText.blindSuffix 
+				+ "(\\s|" + BlindText.blindPrefix + "[0-9]+" + BlindText.blindSuffix + "|,|and)*" + ent2 + ".*") )
+			addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, 1);
+	}
+	
+	/**
+	 * 
+	 * @param sen
+	 * @param ent1
+	 * @param ent2
+	 * @param listFeatIndsOfCurInp
+	 * @param listFeatCountOfCurInp
+	 */
+	public void matchPPIpatternOnSentence ( String sen, String ent1, String ent2,
+			ArrayList<Integer> listFeatIndsOfCurInp, ArrayList<Integer> listFeatCountOfCurInp ) {
+		
+		String ENT_name_1 = "", ENT_name = "";
+		
+		ENT_name = ent2;
+		ENT_name_1 = ent1;
+		
+		String[] patterns = new String[]{
+				ENT_name_1 + "\\s*.*\\s*" + ENT_name + " complex",
+				ENT_name_1 + "\\s*.*\\s*activate[sd]?\\s*.*\\s*" + ENT_name,
+				ENT_name_1 + "\\s*.*\\s*stimulate[sd]?\\s*.*\\s*" + ENT_name,
+				ENT_name_1 + "\\s*.*\\s*bind(s|ed)?\\s*.*\\s*" + ENT_name,
+				"association of\\s*.*\\s*" + ENT_name_1 + "\\s*.*\\s*with\\s*.*\\s*" + ENT_name,
+				ENT_name_1 + "\\s*.*\\s*interact(s|ed)? with\\s*.*\\s*" + ENT_name,
+				"interaction (between|among)\\s*.*\\s*" + ENT_name + "\\s*.*\\s*and\\s*.*\\s*" + ENT_name,
+				ENT_name_1 + "\\s*.*\\s*" + ENT_name + " interaction",
+				ENT_name_1 + "\\s*.*\\s*" + ENT_name + " binding",
+				ENT_name_1 + "\\s*.*\\s*" + ENT_name + " interact",
+				ENT_name_1 + "\\s*.*\\s*associates? with\\s*.*\\s*" + ENT_name,
+				"association between\\s*.*\\s*" + ENT_name_1 + "\\s*.*\\s*and\\s*.*\\s*" + ENT_name,
+				ENT_name_1 + "\\s*.*\\s*and\\s*.*\\s*" + ENT_name + " \\s*.*\\s*association with each other",
+				ENT_name_1 + "\\s*.*\\s*binds? to\\s*.*\\s*" + ENT_name,
+				"binding of\\s*.*\\s*" + ENT_name_1 + "\\s*.*\\s*to\\s*.*\\s*" + ENT_name,
+				ENT_name_1 + " and " + ENT_name + " bind",
+				"binding between " + ENT_name_1 + " and " + ENT_name,
+				"complex " + ENT_name_1 + " and " + ENT_name,
+				ENT_name_1 + " complex with " + ENT_name,
+				ENT_name_1 + " complex " + ENT_name,
+				ENT_name_1 + "\\s*.*\\s*not (interact|associate|bind|complex)\\s*.*\\s*" + ENT_name,
+				ENT_name_1 + "\\s*.*\\s*but not " + ENT_name,
+		};
+		
+		
+		for ( int i=0; i<patterns.length; i++ ) {
+			if ( sen.matches(".*" + patterns[i] + ".*") ) {
+				String[] feature = new String[] {
+						"Pattern-" + i + "@",
+				};
+				addNewFeatureInList(feature, listFeatIndsOfCurInp, listFeatCountOfCurInp, 1);
+			//	System.out.println(sen + "\n" + patterns[i] + "\n");
+			} 
+		}
+	}
+	
+	
+}

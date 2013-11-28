@@ -1,0 +1,218 @@
+package Others;
+
+import java.io.IOException;
+import java.util.ArrayList;
+
+import Utility.FileUtility;
+
+public class StatSignfTester {
+
+	ArrayList<String> listPref = new ArrayList<String>(), listBase = new ArrayList<String>(),
+	listGold = new ArrayList<String>();
+
+	/**
+	 * 
+	 * @param args
+	 * @throws Exception
+	 */
+	public static void main ( String[] args ) throws Exception{
+		
+		String path = "../../data/5_PPI_corpora/insSpace/bioinfer";
+		
+		String goldFile = path + "/gold.stat.in",
+			baseFile = path + "/isr/base.stat.in", 
+			preferredFile = path + "/icr/base.stat.in";
+		
+		String predEntPairsFile = path + "/icr/entPairFileName_TK", 
+			baseEntPairsFile = path + "/isr/entPairFileName_TK",
+			allEntPairsFile = path + "/isr/entPairFileName_TK";
+				
+		StatSignfTester obj = new StatSignfTester();
+		
+		// read goal predictions for all relation pairs used in experiments 
+		//obj.readEntiresForGoldFile(baseFile);
+		obj.readEntiresForGoldFile(preferredFile);
+		
+		// read all relation pairs used in experiments 
+	//	obj.insertEntriesForPairsThatAreLeftOut(preferredFile, predEntPairsFile, allEntPairsFile);
+		//obj.insertEntriesForPairsThatAreLeftOut(baseFile, baseEntPairsFile, allEntPairsFile);
+		
+		obj.createOutputFileForISREappliedOnIUR(baseFile, baseEntPairsFile, predEntPairsFile);
+		
+		
+		obj.createStatTestInputFiles(goldFile, baseFile, preferredFile);
+		
+		args = new String[]{goldFile+".t", baseFile+".t", preferredFile+".t", "1000", "0.05"};
+		org.itc.irst.tcc.sre.util.ApproximateRandomizationProcedure.main(args);
+	}
+	
+	
+	private void createOutputFileForISREappliedOnIUR( String isrPredFile, String isrEntPairsFile, String icrEntPairsFile ) throws IOException {
+		
+		ArrayList<String> listIcrEntPairs = FileUtility.readNonEmptyFileLines(icrEntPairsFile);
+		ArrayList<String> listIsrEntPairs = FileUtility.readNonEmptyFileLines(isrEntPairsFile);
+		ArrayList<String> listIsrPreds = FileUtility.readNonEmptyFileLines(isrPredFile);
+		StringBuilder sb = new StringBuilder();
+			
+		for ( int i=0; i<listIcrEntPairs.size(); i++ ) {
+			if ( !listIsrEntPairs.get(i).equals(listIcrEntPairs.get(i)) ) { 
+				listIsrEntPairs.remove(i);
+				listIsrPreds.remove(i);
+				i--;
+				continue;
+			}			
+			
+			sb.append(listIsrPreds.get(i) + "\n");			
+		}
+		
+		FileUtility.writeInFile(isrPredFile + ".isreOnIUR", sb.toString(), false);
+	}
+	
+	
+	/**
+	 * 
+	 * @param origPredFile
+	 * @param origEntPairsFile
+	 * @param allEntPairsFile
+	 * @throws IOException 
+	 */
+	private void insertEntriesForPairsThatAreLeftOut( String origPredFile, String origEntPairsFile, String allEntPairsFile ) throws IOException {
+		
+		ArrayList<String> listAllEntPairs = FileUtility.readNonEmptyFileLines(allEntPairsFile);
+		ArrayList<String> listOrigEntPairs = FileUtility.readNonEmptyFileLines(origEntPairsFile);
+		ArrayList<String> listOrigPreds = FileUtility.readNonEmptyFileLines(origPredFile);
+		StringBuilder sb = new StringBuilder();
+			
+		for ( int i=0; i<listAllEntPairs.size(); i++ ) {
+			if ( !listAllEntPairs.get(i).equals(listOrigEntPairs.get(i)) ) { 
+				// add missing pair
+				listOrigEntPairs.add(i, listAllEntPairs.get(i));
+
+				float x = Float.valueOf(listGold.get(i));
+				if ( x < 1 )
+					listOrigPreds.add(i, "-1");
+				else
+					listOrigPreds.add(i, "0.0");
+			}
+			
+			if ( listOrigPreds.get(i).matches("0.0\\s+.*\\s+1\\s+.*") ) 
+				listOrigPreds.set(i, "1.0");
+			
+			sb.append(listOrigPreds.get(i) + "\n");			
+		}
+		
+		FileUtility.writeInFile(origPredFile + ".rev", sb.toString(), false);
+	}
+	
+	/**
+	 * 
+	 * @param goldFile
+	 * @param baseFile
+	 * @param preferredFile
+	 * @throws Exception
+	 */
+	public void createStatTestInputFiles( String goldFile, String baseFile, String preferredFile ) throws Exception{
+		//listPref = readjustStatTestInputFiles(preferredFile+".rev");
+		//listBase = readjustStatTestInputFiles(baseFile+".rev");
+		listPref = readjustStatTestInputFiles(preferredFile);
+		listBase = readjustStatTestInputFiles(baseFile+".isreOnIUR");
+		
+		removeTNforAll();
+				
+		writeStatTestInputFiles( listGold, goldFile+".t");
+		writeStatTestInputFiles( listPref, preferredFile+".t");
+		writeStatTestInputFiles( listBase, baseFile+".t");
+		
+	}
+	
+	 	
+	/**
+	 * 
+	 * @param fileName
+	 * @return
+	 * @throws Exception
+	 */
+	private ArrayList<String> readjustStatTestInputFiles( String fileName ) throws Exception{
+	
+		ArrayList<String> str = FileUtility.readFileLines(fileName);
+		
+		for ( int i=0; i<str.size(); i++ ){
+			if ( !str.get(i).trim().isEmpty() ){
+				if ( str.get(i).matches("0.0\\s+.*\\s+1\\s+.*") ) 
+					str.set(i, "1.0");
+				str.set(i, str.get(i).split("\\s+")[0]);
+			}
+		}
+		
+		return str;
+		
+	}
+	
+	/**
+	 * 
+	 * @throws Exception
+	 */
+	private void removeTNforAll() throws Exception{
+	
+		for ( int i=0; i<listBase.size(); i++ ){
+			if ( listBase.get(i).equals("-1") && listPref.get(i).equals("-1")
+				&& listGold.get(i).equals("-1") ) {
+				listBase.remove(i);
+				listPref.remove(i);
+				listGold.remove(i);
+				i--;
+			}
+		}
+	}
+	
+	/**
+	 * 
+	 * @param str
+	 * @param fileName
+	 * @throws Exception
+	 */
+	private void writeStatTestInputFiles( ArrayList<String> str, String fileName ) throws Exception{
+	
+		StringBuilder sb = new StringBuilder();
+		float x = 0;
+		
+		for ( int i=0; i<str.size(); i++ ){
+			
+			x = Float.valueOf(str.get(i).split("\\s+")[0]);
+			if ( x < 1 )			
+				sb.append( "0.0\t" + i + "-0\n");
+			else
+				sb.append( "1.0\t" + i + "-0\n");
+		}
+		
+		FileUtility.writeInFile(fileName, sb.toString(), false);		
+	}
+	
+	/**
+	 * 
+	 * @param tkFolderName
+	 * @throws Exception
+	 */
+	private void readEntiresForGoldFile( String baseFile ) throws Exception{
+		ArrayList<String> listAllEntPairs = FileUtility.readNonEmptyFileLines(baseFile);
+		int p = 0;
+		for ( int k=0; k<listAllEntPairs.size(); k++ ){
+			String[] str = listAllEntPairs.get(k).split("\\s+");
+			
+			if ( str[0].equals("1.0") && str[2].equals("1") ) {
+				listGold.add("1.0");
+				p++;
+			}
+			else if ( str[0].equals("0.0") && str[2].equals("0") ) {
+				listGold.add("1.0");
+				p++;
+			}
+			else
+				listGold.add("0.0");
+		}
+		
+		System.out.println(p);
+	}
+	
+	
+}

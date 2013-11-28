@@ -1,0 +1,661 @@
+Abstract Id: DrugDDI.d505
+Sentence Id: DrugDDI.d505.s0
+No formal drug /drug interaction studies with Plenaxis@ were performed.
+
+DrugDDI.d505.s0.e0 8 11
+drug
+drug
+
+
+
+Abstract Id: DrugDDI.d505
+Sentence Id: DrugDDI.d505.s1
+Cytochrome P-450 is not known to be involved in the metabolism of Plenaxis@.
+
+DrugDDI.d505.s1.e0 0 14
+drug
+Cytochrome P-450
+
+
+
+Abstract Id: DrugDDI.d505
+Sentence Id: DrugDDI.d505.s2
+Plenaxis@ is highly bound to plasma proteins (96 to 99%).
+
+DrugDDI.d505.s2.e0 24 37
+drug
+plasma proteins
+
+
+
+Abstract Id: DrugDDI.d505
+Sentence Id: DrugDDI.d505.s3
+Laboratory Tests Response to Plenaxis@ should be monitored by measuring serum total testosterone concentrations just prior to administration on Day 29 and every 8 weeks thereafter.
+
+DrugDDI.d505.s3.e0 67 83
+drug
+total testosterone
+
+
+
+Abstract Id: DrugDDI.d505
+Sentence Id: DrugDDI.d505.s4
+Serum transaminase levels should be obtained before starting treatment with Plenaxis@ and periodically during treatment.
+
+DrugDDI.d505.s4.e0 5 16
+drug
+transaminase
+
+
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s0
+Certain drugs tend to produce hyperglycemia and may lead to loss of blood glucose control.
+
+DrugDDI.d103.s0.e0 7 11
+drug
+drugs
+DrugDDI.d103.s0.new.DISO.e1 25 37
+DISO
+hyperglycemia
+
+
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s1
+These drugs include the thiazides and other diuretics , corticosteroids , phenothiazines , thyroid products, estrogens , oral contraceptives , phenytoin , nicotinic acid , sympathomimetics , calcium channel-blocking drugs , and isoniazid .
+
+DrugDDI.d103.s1.e0 5 9
+drug
+drugs
+DrugDDI.d103.s1.e1 20 28
+drug
+thiazides
+DrugDDI.d103.s1.e2 37 45
+drug
+diuretics
+DrugDDI.d103.s1.e3 47 61
+drug
+corticosteroids
+DrugDDI.d103.s1.e4 63 76
+drug
+phenothiazines
+DrugDDI.d103.s1.e5 78 84
+drug
+thyroid
+DrugDDI.d103.s1.e6 94 102
+drug
+estrogens
+DrugDDI.d103.s1.e7 104 121
+drug
+oral contraceptives
+DrugDDI.d103.s1.e8 123 131
+drug
+phenytoin
+DrugDDI.d103.s1.e9 133 145
+drug
+nicotinic acid
+DrugDDI.d103.s1.e10 147 162
+drug
+sympathomimetics
+DrugDDI.d103.s1.e11 164 191
+drug
+calcium channel-blocking drugs
+DrugDDI.d103.s1.e12 196 204
+drug
+isoniazid
+
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e1 false
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e2 false
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e3 false
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e4 false
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e5 false
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e6 false
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e7 false
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e8 false
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e9 false
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e10 false
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e11 false
+interaction DrugDDI.d103.s1.e0 DrugDDI.d103.s1.e12 false
+interaction DrugDDI.d103.s1.e1 DrugDDI.d103.s1.e2 false
+interaction DrugDDI.d103.s1.e1 DrugDDI.d103.s1.e3 false
+interaction DrugDDI.d103.s1.e1 DrugDDI.d103.s1.e4 false
+interaction DrugDDI.d103.s1.e1 DrugDDI.d103.s1.e5 false
+interaction DrugDDI.d103.s1.e1 DrugDDI.d103.s1.e6 false
+interaction DrugDDI.d103.s1.e1 DrugDDI.d103.s1.e7 false
+interaction DrugDDI.d103.s1.e1 DrugDDI.d103.s1.e8 false
+interaction DrugDDI.d103.s1.e1 DrugDDI.d103.s1.e9 false
+interaction DrugDDI.d103.s1.e1 DrugDDI.d103.s1.e10 false
+interaction DrugDDI.d103.s1.e1 DrugDDI.d103.s1.e11 false
+interaction DrugDDI.d103.s1.e1 DrugDDI.d103.s1.e12 false
+interaction DrugDDI.d103.s1.e2 DrugDDI.d103.s1.e3 false
+interaction DrugDDI.d103.s1.e2 DrugDDI.d103.s1.e4 false
+interaction DrugDDI.d103.s1.e2 DrugDDI.d103.s1.e5 false
+interaction DrugDDI.d103.s1.e2 DrugDDI.d103.s1.e6 false
+interaction DrugDDI.d103.s1.e2 DrugDDI.d103.s1.e7 false
+interaction DrugDDI.d103.s1.e2 DrugDDI.d103.s1.e8 false
+interaction DrugDDI.d103.s1.e2 DrugDDI.d103.s1.e9 false
+interaction DrugDDI.d103.s1.e2 DrugDDI.d103.s1.e10 false
+interaction DrugDDI.d103.s1.e2 DrugDDI.d103.s1.e11 false
+interaction DrugDDI.d103.s1.e2 DrugDDI.d103.s1.e12 false
+interaction DrugDDI.d103.s1.e3 DrugDDI.d103.s1.e4 false
+interaction DrugDDI.d103.s1.e3 DrugDDI.d103.s1.e5 false
+interaction DrugDDI.d103.s1.e3 DrugDDI.d103.s1.e6 false
+interaction DrugDDI.d103.s1.e3 DrugDDI.d103.s1.e7 false
+interaction DrugDDI.d103.s1.e3 DrugDDI.d103.s1.e8 false
+interaction DrugDDI.d103.s1.e3 DrugDDI.d103.s1.e9 false
+interaction DrugDDI.d103.s1.e3 DrugDDI.d103.s1.e10 false
+interaction DrugDDI.d103.s1.e3 DrugDDI.d103.s1.e11 false
+interaction DrugDDI.d103.s1.e3 DrugDDI.d103.s1.e12 false
+interaction DrugDDI.d103.s1.e4 DrugDDI.d103.s1.e5 false
+interaction DrugDDI.d103.s1.e4 DrugDDI.d103.s1.e6 false
+interaction DrugDDI.d103.s1.e4 DrugDDI.d103.s1.e7 false
+interaction DrugDDI.d103.s1.e4 DrugDDI.d103.s1.e8 false
+interaction DrugDDI.d103.s1.e4 DrugDDI.d103.s1.e9 false
+interaction DrugDDI.d103.s1.e4 DrugDDI.d103.s1.e10 false
+interaction DrugDDI.d103.s1.e4 DrugDDI.d103.s1.e11 false
+interaction DrugDDI.d103.s1.e4 DrugDDI.d103.s1.e12 false
+interaction DrugDDI.d103.s1.e5 DrugDDI.d103.s1.e6 false
+interaction DrugDDI.d103.s1.e5 DrugDDI.d103.s1.e7 false
+interaction DrugDDI.d103.s1.e5 DrugDDI.d103.s1.e8 false
+interaction DrugDDI.d103.s1.e5 DrugDDI.d103.s1.e9 false
+interaction DrugDDI.d103.s1.e5 DrugDDI.d103.s1.e10 false
+interaction DrugDDI.d103.s1.e5 DrugDDI.d103.s1.e11 false
+interaction DrugDDI.d103.s1.e5 DrugDDI.d103.s1.e12 false
+interaction DrugDDI.d103.s1.e6 DrugDDI.d103.s1.e7 false
+interaction DrugDDI.d103.s1.e6 DrugDDI.d103.s1.e8 false
+interaction DrugDDI.d103.s1.e6 DrugDDI.d103.s1.e9 false
+interaction DrugDDI.d103.s1.e6 DrugDDI.d103.s1.e10 false
+interaction DrugDDI.d103.s1.e6 DrugDDI.d103.s1.e11 false
+interaction DrugDDI.d103.s1.e6 DrugDDI.d103.s1.e12 false
+interaction DrugDDI.d103.s1.e7 DrugDDI.d103.s1.e8 false
+interaction DrugDDI.d103.s1.e7 DrugDDI.d103.s1.e9 false
+interaction DrugDDI.d103.s1.e7 DrugDDI.d103.s1.e10 false
+interaction DrugDDI.d103.s1.e7 DrugDDI.d103.s1.e11 false
+interaction DrugDDI.d103.s1.e7 DrugDDI.d103.s1.e12 false
+interaction DrugDDI.d103.s1.e8 DrugDDI.d103.s1.e9 false
+interaction DrugDDI.d103.s1.e8 DrugDDI.d103.s1.e10 false
+interaction DrugDDI.d103.s1.e8 DrugDDI.d103.s1.e11 false
+interaction DrugDDI.d103.s1.e8 DrugDDI.d103.s1.e12 false
+interaction DrugDDI.d103.s1.e9 DrugDDI.d103.s1.e10 false
+interaction DrugDDI.d103.s1.e9 DrugDDI.d103.s1.e11 false
+interaction DrugDDI.d103.s1.e9 DrugDDI.d103.s1.e12 false
+interaction DrugDDI.d103.s1.e10 DrugDDI.d103.s1.e11 false
+interaction DrugDDI.d103.s1.e10 DrugDDI.d103.s1.e12 false
+interaction DrugDDI.d103.s1.e11 DrugDDI.d103.s1.e12 false
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s2
+When such drugs are administered to a patient receiving Acarbose , the patient should be closely observed for loss of blood glucose control.
+
+DrugDDI.d103.s2.e0 8 12
+drug
+drugs
+DrugDDI.d103.s2.e1 47 54
+drug
+Acarbose
+
+interaction DrugDDI.d103.s2.e0 DrugDDI.d103.s2.e1 true
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s3
+When such drugs are withdrawn from patients receiving Acarbose in combination with sulfonylureas or insulin , patients should be observed closely for any evidence of hypoglycemia.
+
+DrugDDI.d103.s3.e0 8 12
+drug
+drugs
+DrugDDI.d103.s3.e1 46 53
+drug
+Acarbose
+DrugDDI.d103.s3.e2 71 83
+drug
+sulfonylureas
+DrugDDI.d103.s3.e3 86 92
+drug
+insulin
+DrugDDI.d103.s3.new.DISO.e4 141 152
+DISO
+hypoglycemia
+
+interaction DrugDDI.d103.s3.e0 DrugDDI.d103.s3.e1 false
+interaction DrugDDI.d103.s3.e0 DrugDDI.d103.s3.e2 false
+interaction DrugDDI.d103.s3.e0 DrugDDI.d103.s3.e3 false
+interaction DrugDDI.d103.s3.e1 DrugDDI.d103.s3.e2 true
+interaction DrugDDI.d103.s3.e1 DrugDDI.d103.s3.e3 false
+interaction DrugDDI.d103.s3.e2 DrugDDI.d103.s3.e3 false
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s4
+Intestinal adsorbents (e. g., charcoal ) and digestive enzyme preparations containing carbohydrate-splitting enzymes (e. g., amylase , pancreatin ) may reduce the effect of Acarbose and should not be taken concomitantly.
+
+DrugDDI.d103.s4.e0 10 19
+drug
+adsorbents
+DrugDDI.d103.s4.e1 26 33
+drug
+charcoal
+DrugDDI.d103.s4.e2 38 64
+drug
+digestive enzyme preparations
+DrugDDI.d103.s4.e3 110 116
+drug
+amylase
+DrugDDI.d103.s4.e4 118 127
+drug
+pancreatin
+DrugDDI.d103.s4.e5 149 156
+drug
+Acarbose
+
+interaction DrugDDI.d103.s4.e0 DrugDDI.d103.s4.e1 false
+interaction DrugDDI.d103.s4.e0 DrugDDI.d103.s4.e2 false
+interaction DrugDDI.d103.s4.e0 DrugDDI.d103.s4.e3 false
+interaction DrugDDI.d103.s4.e0 DrugDDI.d103.s4.e4 false
+interaction DrugDDI.d103.s4.e0 DrugDDI.d103.s4.e5 true
+interaction DrugDDI.d103.s4.e1 DrugDDI.d103.s4.e2 false
+interaction DrugDDI.d103.s4.e1 DrugDDI.d103.s4.e3 false
+interaction DrugDDI.d103.s4.e1 DrugDDI.d103.s4.e4 false
+interaction DrugDDI.d103.s4.e1 DrugDDI.d103.s4.e5 false
+interaction DrugDDI.d103.s4.e2 DrugDDI.d103.s4.e3 false
+interaction DrugDDI.d103.s4.e2 DrugDDI.d103.s4.e4 false
+interaction DrugDDI.d103.s4.e2 DrugDDI.d103.s4.e5 true
+interaction DrugDDI.d103.s4.e3 DrugDDI.d103.s4.e4 false
+interaction DrugDDI.d103.s4.e3 DrugDDI.d103.s4.e5 false
+interaction DrugDDI.d103.s4.e4 DrugDDI.d103.s4.e5 true
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s5
+Acarbose has been shown to change the bioavailabillty digoxin when they are co-administered, which may require digoxin dose adjustment.
+
+DrugDDI.d103.s5.e0 0 7
+drug
+Acarbose
+DrugDDI.d103.s5.e1 46 52
+drug
+digoxin
+
+interaction DrugDDI.d103.s5.e0 DrugDDI.d103.s5.e1 true
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s6
+Studies in healthy volunteers have shown that Acarbose has no effect on either the pharmacokinetics or pharmacodynamics of digoxin , nifedipine , propranolol , or ranitidine .
+
+DrugDDI.d103.s6.e0 39 46
+drug
+Acarbose
+DrugDDI.d103.s6.e1 105 111
+drug
+digoxin
+DrugDDI.d103.s6.e2 113 122
+drug
+nifedipine
+DrugDDI.d103.s6.e3 124 134
+drug
+propranolol
+DrugDDI.d103.s6.e4 138 147
+drug
+ranitidine
+
+interaction DrugDDI.d103.s6.e0 DrugDDI.d103.s6.e1 false
+interaction DrugDDI.d103.s6.e0 DrugDDI.d103.s6.e2 false
+interaction DrugDDI.d103.s6.e0 DrugDDI.d103.s6.e3 false
+interaction DrugDDI.d103.s6.e0 DrugDDI.d103.s6.e4 false
+interaction DrugDDI.d103.s6.e1 DrugDDI.d103.s6.e2 false
+interaction DrugDDI.d103.s6.e1 DrugDDI.d103.s6.e3 false
+interaction DrugDDI.d103.s6.e1 DrugDDI.d103.s6.e4 false
+interaction DrugDDI.d103.s6.e2 DrugDDI.d103.s6.e3 false
+interaction DrugDDI.d103.s6.e2 DrugDDI.d103.s6.e4 false
+interaction DrugDDI.d103.s6.e3 DrugDDI.d103.s6.e4 false
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s7
+Acarbose did not interfere with the absorption or disposition of the sulfonylurea glyburide in diabetic patients.
+
+DrugDDI.d103.s7.e0 0 7
+drug
+Acarbose
+DrugDDI.d103.s7.e1 58 69
+drug
+sulfonylurea
+
+interaction DrugDDI.d103.s7.e0 DrugDDI.d103.s7.e1 false
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s8
+Acarbose may affect digoxin bioavailabillty and may require dose adjustment of digoxin by 16% (90% confidence interval: 8-23%), decrease mean C max digoxin by 26% (90% confidence interval: 16-34%) and decrease mean trough concentrations of digoxin by 9% (90% confidence limit: 19% decrease to 2% increase).
+
+DrugDDI.d103.s8.e0 0 7
+drug
+Acarbose
+DrugDDI.d103.s8.e1 17 23
+drug
+digoxin
+DrugDDI.d103.s8.e2 68 74
+drug
+digoxin
+DrugDDI.d103.s8.e3 123 125
+drug
+max
+DrugDDI.d103.s8.e4 205 211
+drug
+digoxin
+
+interaction DrugDDI.d103.s8.e0 DrugDDI.d103.s8.e1 true
+interaction DrugDDI.d103.s8.e0 DrugDDI.d103.s8.e2 false
+interaction DrugDDI.d103.s8.e0 DrugDDI.d103.s8.e3 false
+interaction DrugDDI.d103.s8.e0 DrugDDI.d103.s8.e4 false
+interaction DrugDDI.d103.s8.e1 DrugDDI.d103.s8.e2 false
+interaction DrugDDI.d103.s8.e1 DrugDDI.d103.s8.e3 false
+interaction DrugDDI.d103.s8.e1 DrugDDI.d103.s8.e4 false
+interaction DrugDDI.d103.s8.e2 DrugDDI.d103.s8.e3 false
+interaction DrugDDI.d103.s8.e2 DrugDDI.d103.s8.e4 false
+interaction DrugDDI.d103.s8.e3 DrugDDI.d103.s8.e4 false
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s9
+The amount of metformin absorbed while taking Acarbose was bioequivalent to the amount absorbed when taking placebo, as indicated by the plasma AUC values.
+
+DrugDDI.d103.s9.e0 11 19
+drug
+metformin
+DrugDDI.d103.s9.e1 39 46
+drug
+Acarbose
+
+interaction DrugDDI.d103.s9.e0 DrugDDI.d103.s9.e1 false
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s10
+However, the peak plasma level of metformin was reduced by approximately 20% when taking Acarbose due to a slight delay in the absorption of metformin .
+
+DrugDDI.d103.s10.e0 28 36
+drug
+metformin
+DrugDDI.d103.s10.e1 75 82
+drug
+Acarbose
+DrugDDI.d103.s10.e2 117 125
+drug
+metformin
+
+interaction DrugDDI.d103.s10.e0 DrugDDI.d103.s10.e1 true
+interaction DrugDDI.d103.s10.e0 DrugDDI.d103.s10.e2 false
+interaction DrugDDI.d103.s10.e1 DrugDDI.d103.s10.e2 false
+
+Abstract Id: DrugDDI.d103
+Sentence Id: DrugDDI.d103.s11
+There is little if any clinically significant interaction between Acarbose and metformin .
+
+DrugDDI.d103.s11.e0 57 64
+drug
+Acarbose
+DrugDDI.d103.s11.e1 68 76
+drug
+metformin
+
+interaction DrugDDI.d103.s11.e0 DrugDDI.d103.s11.e1 true
+
+Abstract Id: DrugDDI.d518
+Sentence Id: DrugDDI.d518.s0
+Catecholamine-depleting drugs , such as reserpine , may have an additive effect when given with beta-blocking agent s.
+
+DrugDDI.d518.s0.e0 23 27
+drug
+drugs
+DrugDDI.d518.s0.e1 35 43
+drug
+reserpine
+DrugDDI.d518.s0.e2 81 98
+drug
+beta-blocking agent
+
+interaction DrugDDI.d518.s0.e0 DrugDDI.d518.s0.e1 false
+interaction DrugDDI.d518.s0.e0 DrugDDI.d518.s0.e2 true
+interaction DrugDDI.d518.s0.e1 DrugDDI.d518.s0.e2 false
+
+Abstract Id: DrugDDI.d518
+Sentence Id: DrugDDI.d518.s1
+Patients treated with acebutolol plus catecholamine depletors should, therefore, be observed closely for evidence of marked bradycardia or hypotension which may present as vertigo, syncope/presyncope, or orthostatic changes in blood pressure without compensatory tachycardia.
+
+DrugDDI.d518.s1.e0 19 28
+drug
+acebutolol
+DrugDDI.d518.s1.new.DISO.e1 230 240
+DISO
+tachycardia
+
+
+
+Abstract Id: DrugDDI.d518
+Sentence Id: DrugDDI.d518.s2
+Exaggerated hypertensive responses have been reported from the combined use of beta-adrenergic antagonist s and alpha-adrenergic stimulants , including those contained in proprietary cold remedies and vasoconstrictive nasal drops.
+
+DrugDDI.d518.s2.e0 68 92
+drug
+beta-adrenergic antagonist
+DrugDDI.d518.s2.e1 113 122
+drug
+stimulants
+
+interaction DrugDDI.d518.s2.e0 DrugDDI.d518.s2.e1 true
+
+Abstract Id: DrugDDI.d518
+Sentence Id: DrugDDI.d518.s3
+Patients receiving beta-blockers should be warned of this potential hazard.
+
+DrugDDI.d518.s3.e0 17 29
+drug
+beta-blockers
+
+
+
+Abstract Id: DrugDDI.d518
+Sentence Id: DrugDDI.d518.s4
+Blunting of the antihypertensive effect of beta-adrenoceptor blocking agent s by nonsteroidal anti-inflammatory drugs has been reported.
+
+DrugDDI.d518.s4.e0 13 28
+drug
+antihypertensive
+DrugDDI.d518.s4.e1 37 66
+drug
+beta-adrenoceptor blocking agent
+DrugDDI.d518.s4.e2 70 103
+drug
+nonsteroidal anti-inflammatory drugs
+
+interaction DrugDDI.d518.s4.e0 DrugDDI.d518.s4.e1 false
+interaction DrugDDI.d518.s4.e0 DrugDDI.d518.s4.e2 false
+interaction DrugDDI.d518.s4.e1 DrugDDI.d518.s4.e2 true
+
+Abstract Id: DrugDDI.d518
+Sentence Id: DrugDDI.d518.s5
+No significant interactions with digoxin , hydrochlorothiazide , hydralazine , sulfinpyrazone , oral contraceptives , tolbutamide , or warfarin have been observed.
+
+DrugDDI.d518.s5.e0 29 35
+drug
+digoxin
+DrugDDI.d518.s5.e1 37 55
+drug
+hydrochlorothiazide
+DrugDDI.d518.s5.e2 57 67
+drug
+hydralazine
+DrugDDI.d518.s5.e3 69 82
+drug
+sulfinpyrazone
+DrugDDI.d518.s5.e4 84 101
+drug
+oral contraceptives
+DrugDDI.d518.s5.e5 103 113
+drug
+tolbutamide
+DrugDDI.d518.s5.e6 117 124
+drug
+warfarin
+
+interaction DrugDDI.d518.s5.e0 DrugDDI.d518.s5.e1 false
+interaction DrugDDI.d518.s5.e0 DrugDDI.d518.s5.e2 false
+interaction DrugDDI.d518.s5.e0 DrugDDI.d518.s5.e3 false
+interaction DrugDDI.d518.s5.e0 DrugDDI.d518.s5.e4 false
+interaction DrugDDI.d518.s5.e0 DrugDDI.d518.s5.e5 false
+interaction DrugDDI.d518.s5.e0 DrugDDI.d518.s5.e6 false
+interaction DrugDDI.d518.s5.e1 DrugDDI.d518.s5.e2 false
+interaction DrugDDI.d518.s5.e1 DrugDDI.d518.s5.e3 false
+interaction DrugDDI.d518.s5.e1 DrugDDI.d518.s5.e4 false
+interaction DrugDDI.d518.s5.e1 DrugDDI.d518.s5.e5 false
+interaction DrugDDI.d518.s5.e1 DrugDDI.d518.s5.e6 false
+interaction DrugDDI.d518.s5.e2 DrugDDI.d518.s5.e3 false
+interaction DrugDDI.d518.s5.e2 DrugDDI.d518.s5.e4 false
+interaction DrugDDI.d518.s5.e2 DrugDDI.d518.s5.e5 false
+interaction DrugDDI.d518.s5.e2 DrugDDI.d518.s5.e6 false
+interaction DrugDDI.d518.s5.e3 DrugDDI.d518.s5.e4 false
+interaction DrugDDI.d518.s5.e3 DrugDDI.d518.s5.e5 false
+interaction DrugDDI.d518.s5.e3 DrugDDI.d518.s5.e6 false
+interaction DrugDDI.d518.s5.e4 DrugDDI.d518.s5.e5 false
+interaction DrugDDI.d518.s5.e4 DrugDDI.d518.s5.e6 false
+interaction DrugDDI.d518.s5.e5 DrugDDI.d518.s5.e6 false
+
+Abstract Id: DrugDDI.d452
+Sentence Id: DrugDDI.d452.s0
+DIAMOX modifies phenytoin metabolism with increased serum levels of phenytoin .
+
+DrugDDI.d452.s0.e0 0 5
+drug
+DIAMOX
+DrugDDI.d452.s0.e1 14 22
+drug
+phenytoin
+DrugDDI.d452.s0.e2 59 67
+drug
+phenytoin
+
+interaction DrugDDI.d452.s0.e0 DrugDDI.d452.s0.e1 true
+interaction DrugDDI.d452.s0.e0 DrugDDI.d452.s0.e2 true
+interaction DrugDDI.d452.s0.e1 DrugDDI.d452.s0.e2 false
+
+Abstract Id: DrugDDI.d452
+Sentence Id: DrugDDI.d452.s1
+This may increase or enhance the occurrence of osteomalacia in some patients receiving chronic phenytoin therapy.
+
+DrugDDI.d452.s1.new.DISO.e1 39 50
+DISO
+osteomalacia
+DrugDDI.d452.s1.e0 81 89
+drug
+phenytoin
+
+
+
+Abstract Id: DrugDDI.d452
+Sentence Id: DrugDDI.d452.s3
+By decreasing the gastrointestinal absorption of primidone , DIAMOX may decrease serum concentrations of primidone and its metabolites , with a consequent possible decrease in anticonvulsant effect.
+
+DrugDDI.d452.s3.e0 43 51
+drug
+primidone
+DrugDDI.d452.s3.e1 53 58
+drug
+DIAMOX
+DrugDDI.d452.s3.e2 91 99
+drug
+primidone
+DrugDDI.d452.s3.e3 106 116
+drug
+metabolites
+DrugDDI.d452.s3.e4 151 164
+drug
+anticonvulsant
+
+interaction DrugDDI.d452.s3.e0 DrugDDI.d452.s3.e1 false
+interaction DrugDDI.d452.s3.e0 DrugDDI.d452.s3.e2 false
+interaction DrugDDI.d452.s3.e0 DrugDDI.d452.s3.e3 false
+interaction DrugDDI.d452.s3.e0 DrugDDI.d452.s3.e4 false
+interaction DrugDDI.d452.s3.e1 DrugDDI.d452.s3.e2 true
+interaction DrugDDI.d452.s3.e1 DrugDDI.d452.s3.e3 false
+interaction DrugDDI.d452.s3.e1 DrugDDI.d452.s3.e4 false
+interaction DrugDDI.d452.s3.e2 DrugDDI.d452.s3.e3 false
+interaction DrugDDI.d452.s3.e2 DrugDDI.d452.s3.e4 false
+interaction DrugDDI.d452.s3.e3 DrugDDI.d452.s3.e4 false
+
+Abstract Id: DrugDDI.d452
+Sentence Id: DrugDDI.d452.s4
+Caution is advised when beginning, discontinuing, or changing the dose of DIAMOX in patients receiving primidone .
+
+DrugDDI.d452.s4.e0 63 68
+drug
+DIAMOX
+DrugDDI.d452.s4.e1 88 96
+drug
+primidone
+
+interaction DrugDDI.d452.s4.e0 DrugDDI.d452.s4.e1 true
+
+Abstract Id: DrugDDI.d452
+Sentence Id: DrugDDI.d452.s5
+Because of possible additive effects with other carbonic anhydrase inhibitors , concomitant use is not advisable.
+
+DrugDDI.d452.s5.e0 41 67
+drug
+carbonic anhydrase inhibitors
+
+
+
+Abstract Id: DrugDDI.d452
+Sentence Id: DrugDDI.d452.s6
+Acetazolamide may increase the effects of other folic acid antagonists .
+
+DrugDDI.d452.s6.e0 0 12
+drug
+Acetazolamide
+DrugDDI.d452.s6.e1 41 60
+drug
+folic acid antagonists
+
+interaction DrugDDI.d452.s6.e0 DrugDDI.d452.s6.e1 true
+
+Abstract Id: DrugDDI.d452
+Sentence Id: DrugDDI.d452.s7
+Acetazolamide may increase or decrease blood glucose levels.
+
+DrugDDI.d452.s7.e0 0 12
+drug
+Acetazolamide
+
+
+
+Abstract Id: DrugDDI.d452
+Sentence Id: DrugDDI.d452.s8
+Consideration should be taken in patients being treated with antidiabetic agents .
+
+DrugDDI.d452.s8.e0 52 69
+drug
+antidiabetic agents
+
+
+
+Abstract Id: DrugDDI.d452
+Sentence Id: DrugDDI.d452.s9
+Acetazolamide decreases urinary excretion of amphetamine and may enhance the magnitude and duration of their effect.
+
+DrugDDI.d452.s9.e0 0 12
+drug
+Acetazolamide
+DrugDDI.d452.s9.e1 40 50
+drug
+amphetamine
+
+interaction DrugDDI.d452.s9.e0 DrugDDI.d452.s9.e1 true
+
+Abstract Id: DrugDDI.d452
+Sentence Id: DrugDDI.d452.s10
+Acetazolamide reduces urinary excretion of quinidine and may enhance its effect.
+
+DrugDDI.d452.s10.e0 0 12
+drug
+Acetazolamide
+DrugDDI.d452.s10.e1 38 46
+drug
+quinidine
+
+interaction DrugDDI.d452.s10.e0 DrugDDI.d452.s10.e1 true
+

@@ -1,0 +1,126 @@
+#############################################################
+#
+#       Data format for HyREX
+#
+#
+#############################################################
+
+For each sentence, HyREX expects input in the following format:
+
+Abstract Id: DOCUMENT_ID_FOR_THE_SENTENCE
+Sentence Id: SENTENCE_ID
+THE_SENTENCE
+__EMPTY_LINE__
+ENTITY_ID_1 START_INDEX END_INDEX
+ENTITY_TYPE
+ENTITY_NAME
+ENTITY_ID_2 START_INDEX END_INDEX
+ENTITY_TYPE
+ENTITY_NAME
+__EMPTY_LINE__
+RELATION_TYPE_OF_REL_1 ENTITY_ID_1 ENTITY_ID_2 POLARITY
+RELATION_TYPE_OF_REL_2 ENTITY_ID_3 ENTITY_ID_4 POLARITY  
+__EMPTY_LINE__
+
+
+POLARITY means true or false. It is opotional. If polarity is not given than the it is considered as "true" by default and all the other possible pairs would be considered as negative (i.e. "false") relation instances. So, in that case it would be not required to provide "false" relations explicitely. However, if POLARITY is given, then both the "true" and "false" relations (that the system is expected to consider for training/testing) are required to be written explicitly.
+
+If there is no entity or relation instance for the corresponding sentence, an extra blank line must be added. For example, if there is nor relation instance then the above sentence example would become -
+
+Abstract Id: DOCUMENT_ID_FOR_THE_SENTENCE
+Sentence Id: SENTENCE_ID
+THE_SENTENCE
+__EMPTY_LINE__
+ENTITY_ID_1 START_INDEX END_INDEX
+ENTITY_TYPE
+ENTITY_NAME
+ENTITY_ID_2 START_INDEX END_INDEX
+ENTITY_TYPE
+ENTITY_NAME
+__EMPTY_LINE__
+__EMPTY_LINE__
+__EMPTY_LINE__
+
+
+It is optional for the test data to provide relation instance.
+
+
+=========================
+Example without POLARITY
+=========================
+Abstract Id: LLL.d0
+Sentence Id: LLL.d0.s0
+In vivo studies of the activity of four of the kinases, KinA, KinC, KinD (ykvD) and KinE (ykrQ), using abrB transcription as an indicator of Spo0A~P level, revealed that Entity0Xxx and Entity1Xxx were responsible for Entity2Xxx production during the exponential phase of growth in the absence of KinA and KinB.
+
+LLL.d0.s0.e0 141 150
+agent
+Entity0Xxx
+LLL.d0.s0.e1 154 163
+agent
+Entity1Xxx
+LLL.d0.s0.e2 182 191
+target
+Entity2Xxx
+
+interaction LLL.d0.s0.e0 LLL.d0.s0.e2
+interaction LLL.d0.s0.e1 LLL.d0.s0.e2
+
+Abstract Id: LLL.d1
+Sentence Id: LLL.d1.s0
+In this mutant, expression of the Entity0Xxx gene, whose transcription depends on both Entity1Xxx and the phosphorylated Entity2Xxx protein, Spo0A~P, a major transcription factor during early stages of sporulation, was greatly reduced at 43 degrees C.
+
+LLL.d1.s0.e2 28 37
+target
+Entity0Xxx
+LLL.d1.s0.e0 74 83
+agent
+Entity1Xxx
+LLL.d1.s0.e1 104 113
+agent
+Entity2Xxx
+
+interaction LLL.d1.s0.e0 LLL.d1.s0.e2 true
+interaction LLL.d1.s0.e1 LLL.d1.s0.e2 true
+
+==========================
+Example with POLARITY
+==========================
+Abstract Id: LLL.d0
+Sentence Id: LLL.d0.s0
+In vivo studies of the activity of four of the kinases, KinA, KinC, KinD (ykvD) and KinE (ykrQ), using abrB transcription as an indicator of Spo0A~P level, revealed that Entity0Xxx and Entity1Xxx were responsible for Entity2Xxx production during the exponential phase of growth in the absence of KinA and KinB.
+
+LLL.d0.s0.e0 141 150
+agent
+Entity0Xxx
+LLL.d0.s0.e1 154 163
+agent
+Entity1Xxx
+LLL.d0.s0.e2 182 191
+target
+Entity2Xxx
+
+interaction LLL.d0.s0.e0 LLL.d0.s0.e2 true
+interaction LLL.d0.s0.e1 LLL.d0.s0.e2 true
+interaction LLL.d0.s0.e0 LLL.d0.s0.e1 false
+
+Abstract Id: LLL.d1
+Sentence Id: LLL.d1.s0
+In this mutant, expression of the Entity0Xxx gene, whose transcription depends on both Entity1Xxx and the phosphorylated Entity2Xxx protein, Spo0A~P, a major transcription factor during early stages of sporulation, was greatly reduced at 43 degrees C.
+
+LLL.d1.s0.e2 28 37
+target
+Entity0Xxx
+LLL.d1.s0.e0 74 83
+agent
+Entity1Xxx
+LLL.d1.s0.e1 104 113
+agent
+Entity2Xxx
+
+interaction LLL.d1.s0.e0 LLL.d1.s0.e2 true
+interaction LLL.d1.s0.e1 LLL.d1.s0.e2 true
+interaction LLL.d1.s0.e0 LLL.d1.s0.e1 false
+
+
+
+

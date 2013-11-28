@@ -1,0 +1,313 @@
+package Kernels;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import Clause.ClauseAnalyser;
+import DataProcessor.CueDetector;
+import Others.CommonExtra;
+import Structures.*;
+import Utility.*;
+
+
+public class TKOutputPST {
+
+	static int totalRelPos = 0, totalRelNeg = 0;
+	public static ArrayList<String> listAllSenIDs = new ArrayList<String>();
+
+	/* remove
+	String[] arrSenSegmented;
+	int segSenInd = 0;
+	int ccr = 0;
+	//*/
+	
+	/**
+	 * 
+	 * @param inClauseBoundFileName
+	 * @param listAllSenIDs
+	 * @return
+	 */
+	public int[][] getClauseBoundOfAllSen ( String inClauseBoundFileName ) {
+		
+		int[][] arrClauseBoundOfSen = null;		
+		// if clause segmented data exists
+		if ( inClauseBoundFileName != null && new File(inClauseBoundFileName).exists() ) {
+			ArrayList<String[]> listClauseBoundOfAllSen = new ClauseAnalyser().readClauseBoundaries(inClauseBoundFileName);		 
+			listAllSenIDs = new Common().separateSenIDsFromClauseBound(listClauseBoundOfAllSen);
+			arrClauseBoundOfSen = new Common().separateClauseBoundFromSenIDs(listClauseBoundOfAllSen);
+			listClauseBoundOfAllSen.clear();
+		}
+			
+		return arrClauseBoundOfSen;
+	}
+	
+	/**
+	 * 
+	 * @param parsedFileName
+	 * @param aimedDataFileName
+	 * @param outputFile
+	 * @throws Exception
+	 */
+	public void generateTKoutputForPST( String parsedFileName, String fullDataFileName,
+			String outputFile, boolean isResolveOverlappingEntities,
+			ClauseAnalyser.eDataFilterOption relToBeConsidered,
+			String inClauseBoundFileName, String entPairFileName, String depParsedFile ) throws Exception{
+			
+		String line = "";
+		FileUtility.writeInFile( outputFile, "", false);	
+		totalRelPos = 0;
+		totalRelNeg = 0;
+		
+		///* remove
+		//arrSenSegmented = new ClauseAnalyser().readSegmentedData(TKOutputGenerator.segmentedFilName);
+		
+		
+		int[][] arrClauseBoundOfSen = getClauseBoundOfAllSen(inClauseBoundFileName);
+		
+		ArrayList<Sentence> listSentence = Sentence.readFullData(fullDataFileName);
+		ArrayList<CFGParseOfSen> listCFGParseOfAllSen = CFGParseOfSen.readCFGParseForAllSen(parsedFileName);
+		
+		ArrayList<DependencyParseOfSen> listDepParseOfAllSen = DependencyParseOfSen.readDepParseForAllSen(depParsedFile);
+		
+		for ( int s=0; s<listSentence.size(); s++ ) {			
+
+			Sentence objCurSen = listSentence.get(s);
+			CFGParseOfSen objCFGParseOfSen = listCFGParseOfAllSen.get(s);
+			objCurSen.detectBoundariesAndLemmas(objCFGParseOfSen.tokAndPos);
+			
+			if ( isResolveOverlappingEntities )
+				CommonExtra.resolveOverlappingEntities(objCurSen.listOfEntities, true);
+			
+			for ( int k=0; k < objCurSen.listRels.size(); k++ ){
+				int xx=0;
+			
+				if ( !objCurSen.listRels.get(k).arg1.equals(objCurSen.listRels.get(k).arg2) ) {
+					for ( int e=0; xx<2 && e<objCurSen.listOfEntities.size(); e++ ) {
+						if ( objCurSen.listRels.get(k).arg1.equals(objCurSen.listOfEntities.get(e).id) 
+									|| objCurSen.listRels.get(k).arg2.equals(objCurSen.listOfEntities.get(e).id) )
+							xx++;
+					}
+					
+					if ( xx < 2 )
+						System.out.println(objCurSen.listRels.get(k));
+				}
+			}
+			
+			int senIndex = listAllSenIDs.indexOf(objCurSen.senID);
+			
+			// remove
+			 //segSenInd = senIndex;
+			
+			if ( objCurSen.listOfEntities.size() > 1 ){												
+				line = generatePstTKouputForSen(objCurSen, 
+						objCFGParseOfSen.psgParse, 
+						relToBeConsidered, senIndex > 0 ? arrClauseBoundOfSen[senIndex] : null, entPairFileName, listDepParseOfAllSen.get(s));
+				FileUtility.writeInFile( outputFile, line, true);
+			}
+		}
+		
+	}
+	
+	/**
+	 * 
+	 * @param ent
+	 * @param objCurSen
+	 * @param dt
+	 * @return
+	 */
+	private static ArrayList<Integer> hasAntiPositiveGovernor ( Entity ent, Sentence objCurSen, DependencyTree dt ) {
+		
+		ArrayList<Integer> entOneWIndx = Common.findEntityWordIndexes( ent.boundaries, objCurSen.arrBoundariesByWordIndexes);
+		
+		DepTreeNode headOfEnt1 = dt.findHeadAndSubTree( DataStrucUtility.listCopy(entOneWIndx));
+		
+		if ( headOfEnt1 == null ) {
+			System.out.println("Empty head word found for   " + ent.printString());
+			return null;
+		}
+		
+		if ( headOfEnt1.parentWordIndexes == null || headOfEnt1.parentWordIndexes.isEmpty() )
+			return null;
+		
+		for ( int p=0; p<headOfEnt1.parentWordIndexes.size(); p++ ) {
+			if ( !CueDetector.listOfGovernWordsForNonRelatedEnt.contains(dt.allNodesByWordIndex[headOfEnt1.parentWordIndexes.get(p)].lemma.toLowerCase()) )
+					return null;
+		}
+		
+		return headOfEnt1.parentWordIndexes;	
+	}
+	
+	/**
+	 * 
+	 * @param arrClauseBoundOfSen
+	 * @param relToBeConsidered
+	 * @param e1
+	 * @param e2
+	 * @return
+	 */
+	public static boolean skipInstance ( int[] arrClauseBoundOfSen, ClauseAnalyser.eDataFilterOption relToBeConsidered, 
+			Entity e1, Entity e2, Sentence curSen, DependencyTree dt ) {
+		/*
+		ArrayList<Integer> antiPositiveGovernorofEnt1 = hasAntiPositiveGovernor(e1, curSen, dt);
+		ArrayList<Integer> antiPositiveGovernorofEnt2 = hasAntiPositiveGovernor(e2, curSen, dt);
+		if (  antiPositiveGovernorofEnt1 != null && antiPositiveGovernorofEnt2 != null 
+				&& 
+				!(antiPositiveGovernorofEnt1.containsAll(antiPositiveGovernorofEnt2)
+					|| antiPositiveGovernorofEnt2.containsAll(antiPositiveGovernorofEnt1)	) )
+			return true;
+		//	* /	
+		if ( e1.name.equalsIgnoreCase(e2.name) &&
+		 		// if there is no special character between the names
+				! (e2.startIndex - e1.endIndex == 2 || e1.startIndex - e2.endIndex == 2) )
+			return true;
+		//*/
+		/*
+		String textWithoutSpace = curSen.text.replace("\\s+", "");
+		if ( (e2.startIndex - e1.endIndex == 2 && String.valueOf(textWithoutSpace.charAt(e1.endIndex+1)).matches("[()]") ) 
+				|| (e1.startIndex - e2.endIndex == 2 && String.valueOf(textWithoutSpace.charAt(e2.endIndex+1)).matches("[()]") )  )
+			return true;
+		/*
+		if ( ( e1.startIndex > 0 && String.valueOf(textWithoutSpace.charAt(e1.startIndex-1)).matches("[(]") ) 
+				|| ( e2.startIndex > 0 && String.valueOf(textWithoutSpace.charAt(e2.startIndex-1)).matches("[(]") )  )
+			return true;
+		//*/
+		if ( TextUtility.hasOverlap( e1.boundaries, e2.boundaries) )
+			return true;
+				
+		// TODO: add option for filtering because of mismatch of the required types for the arguments
+		
+		if ( arrClauseBoundOfSen != null &&
+				relToBeConsidered == ClauseAnalyser.eDataFilterOption.DATA_WITH_CROSS_CLAUSAL_REL 
+				&& !ClauseAnalyser.isCrossClausalRel(arrClauseBoundOfSen, 
+						e1.boundaries, e2.boundaries) )
+			return true;
+	
+		if ( arrClauseBoundOfSen != null &&
+			relToBeConsidered == ClauseAnalyser.eDataFilterOption.DATA_WITH_INTRA_CLAUSAL_REL ) {
+		
+			if ( ClauseAnalyser.isCrossClausalRel(arrClauseBoundOfSen, e1.boundaries, e2.boundaries) ) {
+				
+				/*
+				int sWI = 0;
+				if ( e1.startIndex > e2.startIndex ) {
+					Entity x = e1;
+					e1 = e2;
+					e2 = x;
+				}
+				
+				for ( sWI=0; sWI < curSen.arrBoundariesByWordIndexes.length; sWI++ )
+					if ( curSen.arrBoundariesByWordIndexes[sWI][0] > e1.endIndex )
+						break;
+				
+				for ( ; sWI < curSen.arrBoundariesByWordIndexes.length; sWI++ ) {
+					if ( curSen.arrBoundariesByWordIndexes[sWI][1] > e2.startIndex
+							&& TextUtility.isPronoun( curSen.arrWordAndPosByParser[sWI][0], curSen.arrWordAndPosByParser[sWI][1])  ) {
+						return false;
+					}
+				}
+				//*/
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * 
+	 * @param senID
+	 * @param sentence
+	 * @param listEnt
+	 * @param listRel
+	 * @param pst
+	 * @return
+	 * @throws IOException 
+	 */
+	private String generatePstTKouputForSen( Sentence objCurSen, String pst, 
+			ClauseAnalyser.eDataFilterOption relToBeConsidered, int[] arrClauseBoundOfSen, String entPairFileName,
+			DependencyParseOfSen objDepParseOfSen) throws IOException{
+		
+		//PhraseStructureTree ps = new PhraseStructureTree(senID, pst, sentence);
+		
+		String output = "";
+	//	PhraseStructureTree tempPST = new PhraseStructureTree(senID, pst, sentence, tokenWithPos);
+		
+		DependencyTree dt = objCurSen.getDependencyTree(objDepParseOfSen);
+		
+		//System.out.println(senID);
+		// for each pair of entities, find minimal subtrees and output it with 1 or 0
+		// 1 represents there exists a relation between those entities
+		for ( int r=0; r < objCurSen.listRels.size(); r++ ){
+			Entity e1 = objCurSen.getEntityById(objCurSen.listRels.get(r).arg1);
+			Entity e2 = objCurSen.getEntityById(objCurSen.listRels.get(r).arg2);
+				
+			// checking relation type
+			if ( skipInstance(arrClauseBoundOfSen, relToBeConsidered, e1, e2, objCurSen, dt) ) {
+				if ( objCurSen.listRels.get(r).isPositive &&
+						hasAntiPositiveGovernor(e1, objCurSen, dt) != null && hasAntiPositiveGovernor(e2, objCurSen, dt)  != null ) {
+					System.out.println(objCurSen.senID + ": " + e1.name + " || " + e2.name);
+		//			skipInstance(arrClauseBoundOfSen, relToBeConsidered, e1, e2, objCurSen);
+					System.out.println(objCurSen.text + "\n");
+					
+					if ( objCurSen.senID.equals("IEPA.d128.s306") )
+							skipInstance(arrClauseBoundOfSen, relToBeConsidered, e1, e2, objCurSen, dt);
+				}
+				continue;	
+			}
+			
+			objCurSen.detectBoundariesAndLemmas(objDepParseOfSen.tokAndPos);
+			PhraseStructureTree temp = new PhraseStructureTree( pst, objCurSen.arrWordAndPosByParser, objCurSen.getWordsAndNE());
+			PhraseStrucTreeNode node = null;
+		//	System.out.println(objCurSen.listRels.get(r).printString());
+			if ( !TextUtility.hasOverlap( e1.boundaries, e2.boundaries) ) {				
+				node = temp.findPathEnclosedTreeWithEntities( e1, e2, false);
+			}
+		
+			if ( !objCurSen.listRels.get(r).isPositive )
+				totalRelNeg++;		
+			else
+				totalRelPos++;
+				
+			if ( node != null ){
+				/*
+				  if ( !objCurSen.listRels.get(r).isPositive ) {
+				 
+				  // start: remove
+					ccr++;
+					FileUtility.writeInFile("ccr_posi_aimed", "ccr : " + ccr + "\n" + senID + ": " + ent1 + " || " + ent2 + "\n" +
+							listEnt.get(i).id + "\t" + listEnt.get(j).id + "\n\n" , true);
+					FileUtility.writeInFile("ccr_posi_aimed", arrSenSegmented[segSenInd].trim() + "\n\n" , true);					
+				}
+				else {
+					ccr++;
+					FileUtility.writeInFile("ccr_posi_aimed", "ccr : " + ccr + "\n" + senID + ": " + ent1 + " || " + ent2 + "\n" +
+							listEnt.get(i).id + "\t" + listEnt.get(j).id + "\n\n" , true);
+					FileUtility.writeInFile("ccr_posi_aimed", arrSenSegmented[segSenInd].trim() + "\n\n" , true);
+					
+				}
+				//*/
+			
+				String str = " |BT| " + node.printTree( true, true, false, false, false )
+						.replaceAll("\\s+", " ") + " |ET|\n";
+				
+				output += TKOutputDT.getOutputForSingleInstance( str, objCurSen.listRels.get(r).isPositive);
+				
+				if ( entPairFileName != null && !entPairFileName.isEmpty() )
+					FileUtility.writeInFile(entPairFileName, e1.id + "\t" + e2.id + "\tFOUND\n", true);			
+			}
+			else {
+				if ( entPairFileName != null && !entPairFileName.isEmpty() )
+					FileUtility.writeInFile(entPairFileName, e1.id + "\t" + e2.id + "\tNOT_FOUND\n", true);
+				
+				if ( objCurSen.listRels.get(r).isPositive )
+					System.out.println(objCurSen.senID + ": " + e1.name + " || " + e2.name);
+				
+				output += TKOutputDT.getOutputForSingleInstance( "\n", objCurSen.listRels.get(r).isPositive);
+			}			
+		}
+		
+		return output;
+	}
+	
+}

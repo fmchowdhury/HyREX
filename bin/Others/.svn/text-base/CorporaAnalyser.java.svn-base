@@ -1,0 +1,203 @@
+package Others;
+
+import java.util.ArrayList;
+
+import Structures.Sentence;
+import Utility.TextUtility;
+
+public class CorporaAnalyser {
+
+	public static void main ( String[] args ) throws Exception {
+		
+		String[] pre = new String[]{ "lll",  "hprd50", "iepa", "aimed", "bioinfer"};
+		
+		for ( int i=0; i<pre.length; i++ ) {
+		
+			String corpus = pre[i];
+			
+			System.out.println(corpus + "\n---------------");
+					
+			ArrayList<Sentence> listOfSentences = Sentence.readFullData("../../data/5_PPI_corpora/no_processing/" + corpus + "/" + corpus + ".full");
+			
+			//System.out.println("Total sentence: " + listOfSentences.size());
+			
+			System.out.println("Avg No Of Words Bet Entities In Sen = " 
+					+ TextUtility.roundNDecimals(new CorporaAnalyser().getAvgNoOfWordsBetEntitiesInSen(listOfSentences, true), 4));
+			
+			double avgNoOfWordsInEntNames = new CorporaAnalyser().getAvgNoOfWordsInEntNames(listOfSentences, true);
+			System.out.println("Avg No Of Words In Ent Names = " 
+					+ TextUtility.roundNDecimals(avgNoOfWordsInEntNames, 4));
+			
+			double avgNoOfWordsOfSen = new CorporaAnalyser().getAvgNoOfWordsOfSen
+					(listOfSentences, true);
+			System.out.println("Avg No Of Words Of Sen = " 
+					+ TextUtility.roundNDecimals(avgNoOfWordsOfSen, 4));
+			System.out.println("Ratio Of Subtoken Entities = " 
+					+ TextUtility.roundNDecimals(new CorporaAnalyser().getRatioOfDiscontinuousEntities
+							(listOfSentences, true), 4));
+			
+			double avgNoOfEntitiesPerSen = new CorporaAnalyser().getAvgNoOfEntitiesPerSen
+					(listOfSentences, true);
+			System.out.println("Avg No Of Entities Per Sen = " 
+					+ TextUtility.roundNDecimals(avgNoOfEntitiesPerSen, 4));
+			
+			System.out.println("Avg No Of words without Entities Per Sen = " 
+					+ TextUtility.roundNDecimals( avgNoOfWordsOfSen - avgNoOfEntitiesPerSen*avgNoOfWordsInEntNames, 4));
+		
+			/*	
+			System.out.println("No Of Conjunction Per Sen = " 
+					+ TextUtility.roundNDecimals(new CorporaAnalyser().getNoOfConjunction
+							(listOfSentences, true), 4));
+			*/
+		
+			System.out.println();
+		}
+	}
+	
+	public double getAvgNoOfWordsOfSen ( ArrayList<Sentence> listOfSentences, boolean onlySenWithTwoEntOrMore ) {
+		
+		double avgWords = 0, totalSen = 0;
+		
+		for ( int i=0; i<listOfSentences.size(); i++ ) {
+			
+			if ( onlySenWithTwoEntOrMore && listOfSentences.get(i).listOfEntities.size() < 2 )
+				continue;
+			
+			avgWords += listOfSentences.get(i).text.trim().split("\\s+").length;
+			totalSen++;
+		}
+
+		return avgWords / totalSen;
+	}
+	
+	public double getAvgNoOfWordsBetEntitiesInSen ( ArrayList<Sentence> listOfSentences, boolean onlySenWithTwoEntOrMore ) {
+		
+		double avgWords = 0, totalEntPair = 0;
+		
+		for ( int i=0; i<listOfSentences.size(); i++ ) {
+			
+			if ( onlySenWithTwoEntOrMore && listOfSentences.get(i).listOfEntities.size() < 2 )
+				continue;
+			
+			Sentence curSen = listOfSentences.get(i);
+			for ( int e1=0; e1<curSen.listOfEntities.size()-1; e1++ ) {
+				
+				int s = curSen.text.indexOf(curSen.listOfEntities.get(e1).name) 
+						+ curSen.listOfEntities.get(e1).name.length();
+				
+				for ( int e2=e1+1; e2<curSen.listOfEntities.size(); e2++ ) { 
+					int t = curSen.text.indexOf(curSen.listOfEntities.get(e2).name);
+					
+					String str = "";
+					if ( s < t )
+						str = curSen.text.substring(s, t).trim();
+					else
+						str = curSen.text.substring(t, s).trim();
+					
+					avgWords += str.split("\\s+").length;
+					totalEntPair++;
+				}
+			}
+		}
+		
+		return avgWords / totalEntPair;
+	}
+	
+	
+	public double getRatioOfDiscontinuousEntities ( ArrayList<Sentence> listOfSentences, boolean onlySenWithTwoEntOrMore ) {
+		
+		double totalDiscontinuousEnt = 0, totalEnt = 0;
+		
+		for ( int i=0; i<listOfSentences.size(); i++ ) {
+			
+			if ( onlySenWithTwoEntOrMore && listOfSentences.get(i).listOfEntities.size() < 2 )
+				continue;
+			
+			Sentence curSen = listOfSentences.get(i);
+			for ( int e1=0; e1<curSen.listOfEntities.size(); e1++ ) {
+				totalEnt++;
+				
+				int s = curSen.text.indexOf(curSen.listOfEntities.get(e1).name);
+				
+				if ( s > 0 && !( String.valueOf(curSen.text.charAt(s-1)).matches("[\\(\"']") 
+						|| String.valueOf(curSen.text.charAt(s-1)).matches("\\s")) ) {
+				
+				//	System.out.print(curSen.text.charAt(s-1) + " ");
+				//	System.out.println(curSen.listOfEntities.get(e1).name);
+					totalDiscontinuousEnt++;
+					continue;
+				}
+					
+				s = s + curSen.listOfEntities.get(e1).name.length();
+				
+				if ( s < curSen.text.length() && !( String.valueOf(curSen.text.charAt(s)).matches("[).,;?'\"]") 
+						|| String.valueOf(curSen.text.charAt(s)).matches("\\s")) ) {
+					
+				//	System.out.print(curSen.listOfEntities.get(e1).name);
+				//	System.out.println(" " + curSen.text.charAt(s));
+					totalDiscontinuousEnt++;
+					continue;
+				}
+			}
+		}
+		
+		return totalDiscontinuousEnt / totalEnt;
+	}
+
+	
+	public double getAvgNoOfEntitiesPerSen ( ArrayList<Sentence> listOfSentences, boolean onlySenWithTwoEntOrMore ) {
+		
+		double totalEnt = 0, totalSen = 0;
+		
+		for ( int i=0; i<listOfSentences.size(); i++ ) {
+			
+			if ( onlySenWithTwoEntOrMore && listOfSentences.get(i).listOfEntities.size() < 2 )
+				continue;
+			
+			totalEnt += listOfSentences.get(i).listOfEntities.size();
+			totalSen++;
+		}
+		
+		return totalEnt / totalSen;
+	}
+
+	public double getNoOfConjunction ( ArrayList<Sentence> listOfSentences, boolean onlySenWithTwoEntOrMore ) {
+		
+		double totalConjunction = 0, totalSen = 0;
+		
+		for ( int i=0; i<listOfSentences.size(); i++ ) {
+			
+			if ( onlySenWithTwoEntOrMore && listOfSentences.get(i).listOfEntities.size() < 2 )
+				continue;
+			
+			totalConjunction += TextUtility.countNumberOfSubstring("and", listOfSentences.get(i).text, false, true);
+			totalConjunction += TextUtility.countNumberOfSubstring("or", listOfSentences.get(i).text, false, true);
+			
+			totalSen++;
+		}
+		
+		return totalConjunction / totalSen;
+	}
+
+	
+	public double getAvgNoOfWordsInEntNames ( ArrayList<Sentence> listOfSentences, boolean onlySenWithTwoEntOrMore ) {
+		
+		double totalWords = 0, totalEnt = 0;
+		
+		for ( int i=0; i<listOfSentences.size(); i++ ) {
+			
+			if ( onlySenWithTwoEntOrMore && listOfSentences.get(i).listOfEntities.size() < 2 )
+				continue;
+			
+			Sentence curSen = listOfSentences.get(i);
+			for ( int e1=0; e1<curSen.listOfEntities.size(); e1++ ) {
+				
+				totalWords += curSen.listOfEntities.get(e1).name.split("\\s+").length;
+				totalEnt++;
+			}
+		}
+		
+		return totalWords / totalEnt;
+	}
+}
+		

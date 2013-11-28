@@ -1,0 +1,485 @@
+package DataProcessor;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
+import Structures.Relation;
+import Structures.Entity;
+import Structures.Sentence;
+import Utility.FileUtility;
+import Utility.TextUtility;
+
+import java.io.File;
+import java.util.ArrayList;
+
+/**
+ * This class is written to convert the Generic ACE 2004 and 2005 XML files into
+ * HyREX data format.  
+ * 
+ * @author Faisal Chowdhury
+ *
+ */
+public class GenericXmlReader {
+ 
+	public static void main(String argv[]) throws Exception {
+		
+		String path = "/media/Study/workspace/HyREX/data_for_Dasha/reace/data/reACE2004/bnews";
+		String[] allFileNames = FileUtility.getFileNamesFromDir(path);
+		
+		StringBuilder sb = new StringBuilder();
+		int totalRel = 0;
+		
+		
+		for ( int f=0; f<allFileNames.length; f++ ) {
+			if ( !allFileNames[f].contains("ttt.xml") )
+				continue;
+			
+			String senXmlFile = path + "/" + allFileNames[f],
+					relXmlFile = path + "/" + allFileNames[f].replaceAll("ttt.xml", "") + "nrm.xml";
+			
+			ArrayList<Sentence> listOfSentencesForCurFile = new ArrayList<Sentence>();;
+			readSentences(senXmlFile, listOfSentencesForCurFile);
+			
+			readEntAndRels(relXmlFile, listOfSentencesForCurFile);
+			
+			for ( int s=0; s<listOfSentencesForCurFile.size(); s++ ) {
+				Sentence curSen = listOfSentencesForCurFile.get(s);
+				
+				if ( curSen.text.isEmpty() )
+					continue;
+				
+				curSen.senID = curSen.absID + "." + curSen.senID;
+				String senWS = curSen.text.replaceAll( "\\s+", "");
+						
+				for ( int e=0; e<curSen.listOfEntities.size(); e++ ) { 
+					curSen.listOfEntities.get(e).id = curSen.absID + "." + curSen.senID + ".e" + curSen.listOfEntities.get(e).id;
+					// fix if there is wrong boundary annotation
+					String enameWS = curSen.listOfEntities.get(e).name.replaceAll( "\\s+", "");
+					
+					//System.out.println(curSen.listOfEntities.get(e).printString());
+					if ( curSen.listOfEntities.get(e).startIndex >= senWS.length() ||
+							senWS.substring(curSen.listOfEntities.get(e).startIndex).indexOf(enameWS) != 0 ) {
+						System.err.println("Wrong boundary annotation: " + curSen.listOfEntities.get(e).printString());
+						
+						// special case for 's (us)
+						if ( enameWS.equals("s") 
+								&& senWS.substring(curSen.listOfEntities.get(e).startIndex).indexOf("'s") == 0 ) {
+							curSen.listOfEntities.get(e).name = "'s";
+							enameWS = "'s";
+						}
+						else
+							// simply replace with the 1st matched string
+							curSen.listOfEntities.get(e).startIndex = senWS.indexOf(enameWS);
+					}
+					
+					if ( curSen.listOfEntities.get(e).startIndex + enameWS.length() -1 != curSen.listOfEntities.get(e).endIndex ) {
+						curSen.listOfEntities.get(e).endIndex = curSen.listOfEntities.get(e).startIndex + enameWS.length() -1;
+					}
+					
+					/*
+					 *  it vs its
+					 */
+
+					if ( enameWS.equals("it") 
+								&& senWS.substring(curSen.listOfEntities.get(e).startIndex).indexOf("its") == 0 ) {
+							int x = curSen.text.indexOf(" its ");
+							
+							if ( x > -1 && curSen.text.substring(0, x).replaceAll("\\s+", "").length() == curSen.listOfEntities.get(e).startIndex ) {
+								curSen.listOfEntities.get(e).name = "its";
+								enameWS = "its";
+								curSen.listOfEntities.get(e).endIndex = curSen.listOfEntities.get(e).endIndex+1;
+							}
+					}
+					
+					
+					/**
+					 * NOTE: We insert space before and after of each entity name. 
+					 * 	This is necessary as sometimes entities (especially, proteins) are not clearly separated,
+					 * 	but have "-" or "/" etc in between them.
+					 */
+					curSen.text = TextUtility.insertSpaceAtStringAbsBoundary(curSen.text, 
+							new int[] {curSen.listOfEntities.get(e).startIndex, curSen.listOfEntities.get(e).endIndex});
+				}
+				
+				for ( int r=0; r<curSen.listRels.size(); r++ ) { 
+					curSen.listRels.get(r).id = curSen.absID + "." + curSen.senID + ".r" + curSen.listRels.get(r).id;
+					curSen.listRels.get(r).arg1 = curSen.absID + "." + curSen.senID + ".e" + curSen.listRels.get(r).arg1;
+					curSen.listRels.get(r).arg2 = curSen.absID + "." + curSen.senID + ".e" + curSen.listRels.get(r).arg2;
+				}
+				
+				totalRel+=curSen.listRels.size();
+				sb = sb.append(curSen.printString());
+			}
+		}
+		
+		String fullData = path + "/.." + path.substring(path.lastIndexOf("/")) + ".full",
+				onlySen = path + "/.." + path.substring(path.lastIndexOf("/")) + ".sen.bllip";
+		
+		FileUtility.writeInFile( fullData, sb.toString(), false);
+		
+		new UnifiedFormatDataProcessor().resolveOverlappedAnnotationsByDuplicatingSentences(
+				fullData, onlySen);
+		
+		/**
+		 * Prepare data for BLLIP parser
+		 */
+		ArrayList<String> listOfAllSen = FileUtility.readFileLines(onlySen);
+		sb = new StringBuilder();
+		
+		for ( int i=0; i<listOfAllSen.size(); i++ ) {
+			String str = listOfAllSen.get(i).trim();
+			
+			if ( !str.isEmpty() )
+				sb.append("<s> " + str + " </s>");
+			sb.append("\n");
+		}
+		
+		FileUtility.writeInFile( onlySen, sb.toString(), false);
+		
+		System.out.println("Total relation = " + totalRel);
+	}
+	
+	/**
+	 * 
+	 * @param relXmlFile
+	 * @param listOfSentences
+	 */
+	public static void readEntAndRels ( String relXmlFile, ArrayList<Sentence> listOfSentences ) {
+		
+		  try {
+			  
+			File fXmlFile = new File(relXmlFile);
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(fXmlFile);
+			doc.getDocumentElement().normalize();
+					   
+			NodeList nList = doc.getElementsByTagName("doc");
+
+			// read entities and relations
+			/*
+			 <doc src="bnews" id="ABC20001001.1830.0973">
+			  
+			  <markup>
+			   <nes>
+			    <ne id="82" gid="E43" fr="w11" to="w11" hfr="w11" hto="w11" t="GPL" st="Region-National" sid="s2">
+			     <textspan>heartland</textspan>
+			    </ne>
+			    </nes>
+			    <rels>
+			     <rel id="4-1" gid="4" e1="97" e2="96" t="EMP-ORG" st="Employ-Staff" sid="s4"/>
+			    */
+			
+			int[][][] arrBoundariesOfWordForAllSen = new int[listOfSentences.size()][][];
+			ArrayList<String> listOfSIDs = new ArrayList<String>();
+			
+			for (int temp = 0; temp < listOfSentences.size(); temp++) {
+				arrBoundariesOfWordForAllSen[temp] = listOfSentences.get(temp).detectBoundariesBySpaceSeparatedWords();
+				listOfSIDs.add(listOfSentences.get(temp).senID);
+			}
+			
+			for (int temp = 0; temp < nList.getLength(); temp++) {
+				
+				Node nNode = nList.item(temp);
+			    
+				NodeList nSenList = doc.getElementsByTagName("ne");
+	            
+				/**
+	             * <ne id="82" gid="E43" fr="w11" to="w11" hfr="w11" hto="w11" t="GPL" st="Region-National" sid="s2">
+			     <textspan>heartland</textspan>
+	             */
+	            for (int s = 0; s < nSenList.getLength(); s++) {
+	            	Entity curEnt = new Entity(); 
+	            	   
+	            	nNode = nSenList.item(s);
+	            	NamedNodeMap attributes = nNode.getAttributes();
+	            	Attr attribute = (Attr)attributes.getNamedItem("id");
+	            	curEnt.id = attribute.getValue();
+
+	            	attribute = (Attr)attributes.getNamedItem("t");
+	            	curEnt.setNEcategory(attribute.getValue());
+
+	            	attribute = (Attr)attributes.getNamedItem("st");
+	            	if ( attribute != null )
+	            	   curEnt.subType = attribute.getValue();
+
+	            	attribute = (Attr)attributes.getNamedItem("sid");
+	            	int curSenIndex = listOfSIDs.indexOf( attribute.getValue());
+
+	            	attribute = (Attr)attributes.getNamedItem("fr");
+	            	int x = listOfSentences.get(curSenIndex).listOfWordIDsBySpace.indexOf(attribute.getValue());
+	            	curEnt.startIndex = arrBoundariesOfWordForAllSen[curSenIndex][x][0];
+
+	            	attribute = (Attr)attributes.getNamedItem("to");
+	            	x = listOfSentences.get(curSenIndex).listOfWordIDsBySpace.indexOf(attribute.getValue());
+
+	            	int z = curSenIndex +1;
+	            	while ( x < 0 ) {
+	            		x = listOfSentences.get(z).listOfWordIDsBySpace.indexOf(attribute.getValue());
+	            		z++;
+	            	}
+	            	
+	            	int y = curSenIndex+1;
+	            	while ( y < z ) {
+	            		listOfSentences.get(curSenIndex).text += listOfSentences.get(y).text;
+	            		listOfSentences.get(curSenIndex).arrWordBySpace = listOfSentences.get(curSenIndex).text.split("\\s+");
+	            		listOfSentences.get(y).text = "";
+	            		
+	            		listOfSentences.get(curSenIndex).listOfWordIDsBySpace.addAll(listOfSentences.get(y).listOfWordIDsBySpace);
+	            		listOfSentences.get(curSenIndex).listOfEntities.addAll(listOfSentences.get(y).listOfEntities);
+	            		listOfSentences.get(curSenIndex).listRels.addAll(listOfSentences.get(y).listRels);
+	            		arrBoundariesOfWordForAllSen[curSenIndex] = listOfSentences.get(curSenIndex).detectBoundariesBySpaceSeparatedWords();
+	            		y++;
+	            	}	            	
+	            		
+	            	curEnt.endIndex = arrBoundariesOfWordForAllSen[curSenIndex][x][1];
+	            	
+	            	NodeList nWordList = nNode.getChildNodes();
+
+	            	for (int w = 0; w < nWordList.getLength(); w++) {
+	            	   nNode = nWordList.item(w);
+	            	   if ( nNode.hasChildNodes() )
+	            		   curEnt.name += getValue(nNode).replaceAll("\\s+", " ") + " ";
+	            	}
+
+	            	curEnt.name = curEnt.name.trim();
+	            	
+	             	if ( curEnt.endIndex < curEnt.startIndex )
+	            		curEnt.endIndex = curEnt.startIndex + curEnt.name.replaceAll("\\s+", "").length() - 1;
+	            	
+	            	listOfSentences.get(curSenIndex).listOfEntities.add(curEnt);
+	            }
+	            
+	            // <rel id="4-1" gid="4" e1="97" e2="96" t="EMP-ORG" st="Employ-Staff" sid="s4"/>
+	            nSenList = doc.getElementsByTagName("rel");
+
+	            for (int s = 0; s < nSenList.getLength(); s++) {
+	            	Relation curRel = new Relation(); 
+
+		             nNode = nSenList.item(s);
+		             NamedNodeMap attributes = nNode.getAttributes();
+		             Attr attribute = (Attr)attributes.getNamedItem("id");
+		             curRel.id = attribute.getValue();
+
+		             attribute = (Attr)attributes.getNamedItem("t");
+		             curRel.type = attribute.getValue();
+		             
+		             attribute = (Attr)attributes.getNamedItem("st");
+		             curRel.subType = attribute.getValue();
+		             
+		             attribute = (Attr)attributes.getNamedItem("sid");
+		             int curSenIndex = listOfSIDs.indexOf( attribute.getValue());
+		             
+		             attribute = (Attr)attributes.getNamedItem("e1");
+		             curRel.arg1 = attribute.getValue();
+		             
+		             attribute = (Attr)attributes.getNamedItem("e2");
+		             curRel.arg2 = attribute.getValue();
+		            
+		             curRel.isPositive = true;
+		            /*
+		             if ( listOfSentences.get(curSenIndex).getEntityById(curRel.arg1) == null
+		            		 || listOfSentences.get(curSenIndex).getEntityById(curRel.arg2) == null ) {
+		             System.err.println( listOfSentences.get(curSenIndex).printString() + curRel.printString() );
+		             	if ( curRel.printString().contains("GEN-AFF 79 77") )
+		             		curRel.arg1.trim();
+		             
+		             }
+		             //*/
+		             int x = curSenIndex - 3;
+		             while ( x >= 0 && listOfSentences.get(x).getEntityById(curRel.arg1) == null && x < curSenIndex )
+		            	 x++;
+		            
+		             int y = curSenIndex - 3;
+		             while ( y >= 0 && listOfSentences.get(y).getEntityById(curRel.arg2) == null && y < curSenIndex )
+		            	 y++;
+		             
+		             if ( (x < y || y < 0 ) && x >= 0 )
+		            	 y = x;
+		            	// */
+		             
+		             if ( y >= 0 && y < curSenIndex ) {
+		            	 while ( (listOfSentences.get(curSenIndex).getEntityById(curRel.arg1) == null
+			            		 || listOfSentences.get(curSenIndex).getEntityById(curRel.arg2) == null)
+			            		 && y < curSenIndex
+		            			 ) {
+			            	 
+		            		 int lenToAdd = listOfSentences.get(y).text.replaceAll("\\s+", "").length();
+			            	 
+		            		 listOfSentences.get(curSenIndex).text = listOfSentences.get(y).text + " " + listOfSentences.get(curSenIndex).text;
+			            	 listOfSentences.get(curSenIndex).arrWordBySpace = listOfSentences.get(curSenIndex).text.split("\\s+");
+			            	 				            
+			            	 listOfSentences.get(y).text = "";
+			            	 
+			            	 for ( int e=0; e<listOfSentences.get(curSenIndex).listOfEntities.size(); e++ ) {
+			            		 listOfSentences.get(curSenIndex).listOfEntities.get(e).startIndex += lenToAdd;
+			            		 listOfSentences.get(curSenIndex).listOfEntities.get(e).endIndex += lenToAdd;
+			            		 listOfSentences.get(curSenIndex).listOfEntities.get(e).boundaries 
+			            		 	= new int[] {listOfSentences.get(curSenIndex).listOfEntities.get(e).startIndex, 
+			            			 listOfSentences.get(curSenIndex).listOfEntities.get(e).endIndex};
+			            	 }
+			            	 
+			            	 listOfSentences.get(y).listOfWordIDsBySpace.addAll(listOfSentences.get(curSenIndex).listOfWordIDsBySpace);
+			            	 listOfSentences.get(y).listOfEntities.addAll(listOfSentences.get(curSenIndex).listOfEntities);
+			            	 listOfSentences.get(y).listRels.addAll(listOfSentences.get(curSenIndex).listRels);
+			            	 
+			            	 listOfSentences.get(curSenIndex).listOfWordIDsBySpace = listOfSentences.get(y).listOfWordIDsBySpace;
+			            	 listOfSentences.get(curSenIndex).listOfEntities = listOfSentences.get(y).listOfEntities;
+			            	 listOfSentences.get(curSenIndex).listRels = listOfSentences.get(y).listRels;
+			            	 			            	 
+			            	 arrBoundariesOfWordForAllSen[curSenIndex] = listOfSentences.get(curSenIndex).detectBoundariesBySpaceSeparatedWords();
+			            	 
+			            	 y++;
+			             }
+		             }
+		             
+		             y = curSenIndex + 1;
+		             while ( listOfSentences.get(curSenIndex).getEntityById(curRel.arg1) == null
+		            		 || listOfSentences.get(curSenIndex).getEntityById(curRel.arg2) == null) {
+		            	 
+		            	 int lenToAdd = listOfSentences.get(curSenIndex).text.replaceAll("\\s+", "").length();
+		            	 
+		            	 listOfSentences.get(curSenIndex).text += " " + listOfSentences.get(y).text;
+		            	 listOfSentences.get(curSenIndex).arrWordBySpace = listOfSentences.get(curSenIndex).text.split("\\s+");
+		            	 
+		            	 listOfSentences.get(y).text = "";			            
+		            	 
+		            	 for ( int e=0; e<listOfSentences.get(y).listOfEntities.size(); e++ ) {
+		            		 listOfSentences.get(y).listOfEntities.get(e).startIndex += lenToAdd;
+		            		 listOfSentences.get(y).listOfEntities.get(e).endIndex += lenToAdd;
+		            		 listOfSentences.get(y).listOfEntities.get(e).boundaries 
+		            		 	= new int[] {listOfSentences.get(y).listOfEntities.get(e).startIndex, 
+		            			 listOfSentences.get(y).listOfEntities.get(e).endIndex};
+		            	 }
+		            	 
+		            	 listOfSentences.get(curSenIndex).listOfWordIDsBySpace.addAll(listOfSentences.get(y).listOfWordIDsBySpace);
+		            	 listOfSentences.get(curSenIndex).listOfEntities.addAll(listOfSentences.get(y).listOfEntities);
+		            	 listOfSentences.get(curSenIndex).listRels.addAll(listOfSentences.get(y).listRels);
+		            	 arrBoundariesOfWordForAllSen[curSenIndex] = listOfSentences.get(curSenIndex).detectBoundariesBySpaceSeparatedWords();
+		            	 
+		            	 y++;
+		             }
+		             
+		             if ( listOfSentences.get(curSenIndex).getEntityById(curRel.arg1) == null
+		            		 || listOfSentences.get(curSenIndex).getEntityById(curRel.arg2) == null )
+		            	 System.err.println(relXmlFile + "\n" + listOfSentences.get(curSenIndex).printString()
+		            			 + curRel.printString() );
+		             
+		             
+		             listOfSentences.get(curSenIndex).listRels.add(curRel);
+	            }
+
+			}		   
+			
+		  } catch (Exception e) {
+			e.printStackTrace();
+			System.err.println(relXmlFile);
+		  }
+	}
+	
+	
+	
+	
+	
+	/**
+	 * 
+	 * @param senXmlFile
+	 * @param listOfSentences
+	 */
+	public static void readSentences ( String senXmlFile, ArrayList<Sentence> listOfSentences ) {
+		
+	  try {
+ 
+		File fXmlFile = new File(senXmlFile);
+		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+		Document doc = dBuilder.parse(fXmlFile);
+		doc.getDocumentElement().normalize();
+				   
+		NodeList nList = doc.getElementsByTagName("doc");
+		
+		for (int temp = 0; temp < nList.getLength(); temp++) {
+ 
+		   Node nNode = nList.item(temp);
+		   NamedNodeMap attributes = nNode.getAttributes();
+		   String docID = "";
+		   
+           for (int g = 0; g < attributes.getLength(); g++) {
+               Attr attribute = (Attr)attributes.getNamedItem("src");
+               
+               if ( attribute == null )
+            	   continue;
+               
+               docID = attribute.getValue();
+               attribute = (Attr)attributes.getNamedItem("id");
+               docID = docID + "." + attribute.getValue();
+               
+               NodeList nSenList = doc.getElementsByTagName("s");
+               
+               for (int s = 0; s < nSenList.getLength(); s++) {
+            	   Sentence curSen = new Sentence();
+            	   curSen.absID = docID;
+            	   
+            	   nNode = nSenList.item(s);
+            	   attributes = nNode.getAttributes();
+            	   attribute = (Attr)attributes.getNamedItem("id");
+                   curSen.senID = attribute.getValue();
+            	   
+            	   NodeList nWordList = nNode.getChildNodes();
+            	   
+                   for (int w = 0; w < nWordList.getLength(); w++) {
+                	   nNode = nWordList.item(w);
+                	   
+                	   if ( nNode.hasChildNodes() ) {
+                    	   attributes = nNode.getAttributes();
+                    	   attribute = (Attr)attributes.getNamedItem("id");
+                           curSen.listOfWordIDsBySpace.add(attribute.getValue());
+                    	
+                		   curSen.text += getValue(nNode).replaceAll("\\s+", " ") + " ";
+                	   }
+                	   /*
+                	   if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+                		   
+             		      Element eElement = (Element) nNode;
+              
+             		      System.out.print(getTagValue("w", eElement) + " "); 
+             		   }
+             		   */
+                   }
+                   
+                   curSen.text = curSen.text.trim();
+                   curSen.arrWordBySpace = curSen.text.split("\\s+");
+                   
+                   listOfSentences.add(curSen);
+               }
+           }
+		}
+		
+	  } catch (Exception e) {
+		e.printStackTrace();
+	  }
+  }
+
+
+	  private static String getValue(Node nElement) {
+		NodeList nlList = nElement.getChildNodes();
+	    Node nValue = (Node) nlList.item(0);
+	 
+		return nValue.getNodeValue();
+	  }
+
+	  /*
+  private static String getTagValue(String sTag, Element eElement) {
+	NodeList nlList = eElement.getElementsByTagName(sTag).item(0).getChildNodes();
+ 
+        Node nValue = (Node) nlList.item(0);
+ 
+	return nValue.getNodeValue();
+  }
+ */
+}

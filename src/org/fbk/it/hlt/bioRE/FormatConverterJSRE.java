@@ -1,0 +1,283 @@
+package org.fbk.it.hlt.bioRE;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
+
+import org.fbk.it.hlt.bioRE.multiStage.MultiStageRE;
+
+import Utility.FileUtility;
+
+public class FormatConverterJSRE {
+	
+	public enum eTokPosLemmaTagTarget {
+		Token,
+		PoS,
+		Lemma,
+		TagOfEntBoundary,
+		TargetEntIndicator,
+		SemanticTypeOfEnt
+	}
+	
+	/**
+	 * BinaryRelFiles means for each of the relTypes a separated sre input file will
+	 * be created with positive and negative class of that file.
+	 * 
+	 * @param tokenizedFileName
+	 * @param relTypes
+	 * @param isConsiderDirection
+	 * @param isMatchRelArg
+	 * @param isCreateBinaryRelFiles
+	 * @return
+	 * @throws Exception
+	 */
+	public static String[] createJSreInputFiles(String tokenizedFileName, String[][] relTypes, 
+			boolean isConsiderDirection,
+			boolean isCreateBinaryRelFiles, int labelStartIndx, String defaultRel) throws Exception{
+		
+		String dirName = "tmp";//Common.TEMP_DIR;
+		File file = new File(dirName);
+		FormatConverterJSRE clsFormatConverterJSRE = new FormatConverterJSRE();
+		
+		if ( !file.exists() ){
+			// Create directory named "tmp" inside current directory
+		    boolean success = (new File(dirName)).mkdir();
+		    if (success)
+		      System.out.println("Directory: '" + dirName + "' created");		    
+		}		
+		
+		int[] relClassLabels = new int[relTypes.length];
+		int defaultClassLabel = new MultiStageRE().populateClassLabels(relTypes, relClassLabels, labelStartIndx, defaultRel);
+			
+		String[] sreFiles = new String[1];
+		
+		if ( isCreateBinaryRelFiles ){
+			sreFiles = new String[relTypes.length];
+			for ( int i=0; i<relTypes.length; i++ ){
+				sreFiles[i] = dirName + "/" + relTypes[i][0] + "_binary.sre";
+				
+				FileUtility.writeInFile(sreFiles[i], clsFormatConverterJSRE.					
+						posTaggedToSreFormatConverter(tokenizedFileName, 
+								new String[][]{{relTypes[i][0]}}, isConsiderDirection, new int[]{relClassLabels[i]}, defaultClassLabel), false);
+			}
+		}
+		
+		String[] temp = tokenizedFileName.split("/"); 
+		sreFiles[0] = dirName + "/" + temp[temp.length-1] + ".sre";
+		FileUtility.writeInFile( sreFiles[0], clsFormatConverterJSRE.posTaggedToSreFormatConverter(tokenizedFileName, 
+				relTypes, isConsiderDirection, relClassLabels, defaultClassLabel), false);
+						
+		return new String[] {sreFiles[0]};
+	}
+	
+	/**
+	 * Convert pos tagged data into jSre input format.
+	 * If isMatchRelArg=true, then relTypes should include relations as "rel_name(arg1,arg2)"
+	 * else "rel_name". Here, value of "arg1" and "arg2" would be "e1" and "e2" or vice versa.  
+	 * 
+	 * @param fileName
+	 * @param relType
+	 * @return
+	 * @throws Exception
+	 */
+	public String posTaggedToSreFormatConverter( String fileName, String[][] relTypes, 
+			boolean isConsiderDirection, int[] relClassLabel, int defaultClassLabel ) throws Exception{
+		
+		String senBody = "", senInEntry = "", senLabel = "", line = "", relation = "";
+		int senId = 1;
+		ArrayList<String[]> tokenLines = new ArrayList<String[]>();
+		String sDefaultClassLabel = String.valueOf(defaultClassLabel);
+		
+		BufferedReader input = new BufferedReader(new FileReader(new File(fileName)));
+		
+		// create input file in jSre format
+		do{
+			tokenLines.clear();
+	
+			// reading the first line of the sentence such as "Sentence: 8"
+			while ( (line = input.readLine()) != null){
+				line = line.trim();
+
+				if ( !line.isEmpty() )
+					break;
+			}
+			
+			//System.out.println(line);
+			
+			// read token lines of the next sentence
+			while ( (line = input.readLine()) != null){
+				line = line.trim();
+
+				if ( line.isEmpty() )
+					break;
+				
+				tokenLines.add(line.split("\\s+"));				
+			}
+			
+			if ( line == null )
+				break;
+			
+			// read relation type
+			relation = input.readLine().replaceAll("\\s+", "");
+			String args = "T T";
+			
+			int re = 0;
+			boolean isRelTypeMatched = false;
+			for ( ; re < relTypes.length; re++ ){
+				isRelTypeMatched = false;
+				for ( int rti=0; rti<relTypes[re].length; rti++ )
+					if ( relation.contains(relTypes[re][rti]) ){
+						isRelTypeMatched = true;
+						break;
+					}
+				
+				if ( isRelTypeMatched ){
+					senLabel = "" + relClassLabel[re];
+					int t = relation.indexOf("(");
+					if ( t > 0 ){
+						relation = relation.substring(t).replaceAll("[(,)]", " ").trim();
+						
+						if ( isConsiderDirection ){
+							if ( relation.equals("e1 e2") )
+								args = "A T";
+							else if ( relation.equals("e2 e1") )
+								args = "T A";
+						}
+					}
+					else
+						relation = "T T";
+					
+					Loader.totalRel++;
+					
+					break;
+				}
+			}
+			
+			if ( re == relTypes.length ){
+				senLabel = sDefaultClassLabel;
+				relation = "T T";
+			}
+			
+			line = input.readLine();
+
+			// merge multi-token entities into single token entities
+			mergeEntityTokens(tokenLines);
+			
+			//System.out.println(senId);
+
+			// Construct body for each pos-tagged sentence
+			senBody = processSenTokenLines(tokenLines, 
+					args.split("\\s+"), relation.split("\\s+"));
+				
+			senInEntry = senInEntry + senLabel + "\t" + senId + "\t" + senBody + "\n";
+			senId++;			
+		}while ( line != null);
+		    
+		input.close();
+
+		return senInEntry;
+	}
+	
+	
+	/**
+	 * 
+	 * @param tokenLines
+	 */
+	private void mergeEntityTokens( ArrayList<String[]> tokenLines ){
+		/*
+		 *  if a token label contains "I-", then merge it with previous token with
+		 *  "_" in the middle between them 
+		 */
+		
+		// TODO: for now, we will assign default POS tag for the merged token as NN. But in
+		// future we have to decide it based on the head word.
+		for ( int i=0; i<tokenLines.size(); i++ ){
+			if ( tokenLines.get(i)[eTokPosLemmaTagTarget.TagOfEntBoundary.ordinal()].contains("I-") ){
+				tokenLines.get(i-1)[0] = tokenLines.get(i-1)[0] + "_" + tokenLines.get(i)[0];
+				tokenLines.get(i-1)[1] = tokenLines.get(i-1)[1] + "_" + tokenLines.get(i)[1];
+				tokenLines.get(i-1)[2] = "NN";
+				tokenLines.remove(i);
+				i--;
+			}
+				
+		}
+	}
+	
+	
+	/**
+	 * 
+	 * @param tokenLines
+	 * @return
+	 */
+	private String processSenTokenLines( ArrayList<String[]> tokenLines, 
+			String[] relArgs, String[] entOrder ){
+
+		String tokenChars = "", lemma = "", pos = "", entityType = "", targetEntityLabel = "", entSemGroup = "", 
+			senBody = "";
+		
+		int tokenId = 0;
+		
+		/*
+		 * Algo:
+		 * -----
+		 *	Construct body for each pos-tagged sentence
+		 *	- call a method to merge multi-token entities into single token entities 
+		 *		and return the token lines of the sentence
+		 *		- if a token label contains "I-", then merge it with previous token with 
+		 *			"_" in the middle between them
+		 *		-  
+		 *	- for each token line
+		 *		- do tokenId + "&&" + tokenChars + "&&" + lemma + "&&" 
+		 *				+ pos + "&&" + entityType + "&&" + entityLabel + " "
+		 *
+		 *	Assign label := 1 for all the relation types i else assign label := 0
+		 *
+		 *  Set senInEntry =  senLabel + "\t" + senId + "\t" + senBody + "\n"
+		 *
+		 */
+		int totTarget = 0;
+		for ( int i=0; i < tokenLines.size(); i++ ){
+			//System.out.println(i);
+			tokenChars = tokenLines.get(i)[eTokPosLemmaTagTarget.Token.ordinal()];
+			pos = tokenLines.get(i)[eTokPosLemmaTagTarget.PoS.ordinal()];
+			lemma = tokenLines.get(i)[eTokPosLemmaTagTarget.Lemma.ordinal()];
+			entityType = tokenLines.get(i)[eTokPosLemmaTagTarget.TagOfEntBoundary.ordinal()].replaceAll("[BI]-", "");
+			targetEntityLabel = tokenLines.get(i)[eTokPosLemmaTagTarget.TargetEntIndicator.ordinal()];
+			entSemGroup = tokenLines.get(i)[eTokPosLemmaTagTarget.SemanticTypeOfEnt.ordinal()];
+						
+			int z = 0;
+			if ( !entityType.equals("O") ){
+				
+				if ( !targetEntityLabel.equals("O") ) {
+					for ( ; z < entOrder.length; z++ )
+						if ( targetEntityLabel.equals(entOrder[z]) )	{			
+							//relation.contains("(" + entityLabel + ",") || relation.contains("," + entityLabel + ")") ) 
+							targetEntityLabel = relArgs[z];
+							break;
+						}
+					
+					// default
+					if ( z == entOrder.length ) {
+						targetEntityLabel = "T";						
+					}
+					
+					totTarget++;
+				}
+			}
+			else
+				entSemGroup = "O";
+						
+			senBody = senBody + tokenId + "&&" + tokenChars + "&&" + lemma + "&&" + pos + "&&" + entSemGroup + "&&" + targetEntityLabel + " ";
+			tokenId++;			
+		}
+		
+		if ( totTarget < 2 ) {
+			System.err.println("Error: Less than 2 arguments detected in an instance.\n\n" + senBody.trim());			
+			System.exit(0);			
+		}
+		
+		return senBody.trim();
+	}
+
+}
