@@ -15,7 +15,7 @@ Modification, redistribution or any other usage of this software is permitted wi
 
 ### Disclaimer
 
-All the tools and libraries (e.g. SVM-Light-TK and the jar files under "lib" directory) used by this software have their own license type. Please check them if you intend to use them for commerical usage.
+All the 3rd party tools and libraries (e.g. SVM-Light-TK and the jar files under "lib" directory) used by this software have their own license type. Please check them if you intend to use them for commerical usage.
 
 ### Required Libraries/jars
 
