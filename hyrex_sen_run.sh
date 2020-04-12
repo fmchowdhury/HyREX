@@ -7,28 +7,29 @@
 # Run the tool
 fnRun()
 {
-	Parameters="-t $1 -C $2 -F $3  -c $4 -b $5 -L $6 -M $7 -m $8 -U $9 -T $T -V L -d $d" 
+	Parameters="-t $1 -C $2 -F $3  -c $4 -b $5 -L $6 -M $7 -m $8 -U $9 -T $T -V L -d $d"
 
 	echo $Parameters >> $TRACE_FILE
 
 	cd $SVM_LIGHT_TK
-	rm $OUT_FILE
-	rm $TRACE_FILE
-	rm $PRED_FILE
-	rm $All_PRED_FILE
+	declare -a tmp_file_list=($OUT_FILE  $PRED_FILE  $All_PRED_FILE $TRACE_FILE)
+	for fn in "${tmp_file_list[@]}"
+	do
+	      fnDelFileOrDir $fn
+	done
 
 	pos=`grep "^1" $OUT_DIR/train.tk | wc -l`
 	neg=`grep "^-1" $OUT_DIR/train.tk | wc -l`
-        
+
 	if [ $pos -lt 1 ]
-        then
+  then
 		echo "No of positive instance is zero. Aborting training."
 		findNegatedSentence=0
 		return
 	fi
 
 	if [ $pos -lt 1 ]
-        then
+  then
 		echo "No of negative instance is zero. Aborting training."
 		findNegatedSentence=0
 		return
@@ -37,34 +38,36 @@ fnRun()
 	cf=`echo $neg / $pos | bc -l`
 
 	echo "pos=$pos neg=$neg cf=$cf" >> $OUT_FILE
-	
+
 	if [ -n "$TRAIN_DATA_FULL" ]; then
 		echo "$(date) -> Training started..."
-		echo "$(date) -> Training started..." >> $TRACE_FILE		
-		./svm_learn $Parameters -j $cf $OUT_DIR/train.tk $OUT_DIR/model
+		echo "$(date) -> Training started..." >> $TRACE_FILE
+		$SVM_LIGHT_TK/svm_learn $Parameters -j $cf $OUT_DIR/train.tk $OUT_DIR/model
 	fi
 
 	echo "$(date) -> Testing started..."
-	echo "$(date) -> Testing started..." >> $TRACE_FILE		
-	./svm_classify $OUT_DIR/test.tk $OUT_DIR/model >> $OUT_FILE
+	echo "$(date) -> Testing started..." >> $TRACE_FILE
+	$SVM_LIGHT_TK/svm_classify $OUT_DIR/test.tk $OUT_DIR/model >> $OUT_FILE
 	less $PRED_FILE >> $All_PRED_FILE
-	
+
 	echo ""  >> $OUT_FILE
-	fnPrint $t $C $F $cost $b $lambda $mu $m $U 
+	fnPrint $t $C $F $cost $b $lambda $mu $m $U
 }
 
 
 # Do n-fold cross validation
 fnCrossFold()
 {
-	Parameters="-t $1 -C $2 -F $3  -c $4 -b $5 -L $6 -M $7 -m $8 -U $9 -T $T -V L -d $d" 
+	Parameters="-t $1 -C $2 -F $3  -c $4 -b $5 -L $6 -M $7 -m $8 -U $9 -T $T -V L -d $d"
 	CORPUS_FILES_DIR=$OUT_DIR/tk
 
 	echo $Parameters >> $TRACE_FILE
 
-	rm $OUT_FILE
-	rm $PRED_FILE
-	rm $All_PRED_FILE
+	declare -a tmp_file_list=($OUT_FILE  $PRED_FILE  $All_PRED_FILE)
+	for fn in "${tmp_file_list[@]}"
+	do
+	      fnDelFileOrDir $fn
+	done
 
 	cd $SVM_LIGHT_TK
 
@@ -73,14 +76,14 @@ fnCrossFold()
 	        neg=`grep "^-1" $CORPUS_FILES_DIR/train-203-$i.tk | wc -l`
         	cf=`echo $neg / $pos | bc -l`
 	        echo "pos=$pos neg=$neg cf=$cf" >> $OUT_FILE
-		
+
 		echo "Learning on train fold $i"
-		echo "$(date) -> training for fold $i" >> $TRACE_FILE		
-		./svm_learn $Parameters -j $cf $CORPUS_FILES_DIR/train-203-$i.tk $OUT_DIR/model
+		echo "$(date) -> training for fold $i" >> $TRACE_FILE
+		$SVM_LIGHT_TK/svm_learn $Parameters -j $cf $CORPUS_FILES_DIR/train-203-$i.tk $OUT_DIR/model
 
 		echo "Testing on test fold $i"
 		echo "$(date) -> testing for fold $i" >> $TRACE_FILE
-		./svm_classify $CORPUS_FILES_DIR/test-203-$i.tk $OUT_DIR/model >> $OUT_FILE
+		$SVM_LIGHT_TK/svm_classify $CORPUS_FILES_DIR/test-203-$i.tk $OUT_DIR/model >> $OUT_FILE
 		less $PRED_FILE >> $All_PRED_FILE
 
 		echo ""  >> $OUT_FILE
@@ -128,7 +131,7 @@ fnReturnF1()
 # Set the current F1 value as prev F1
 fnSetPrevF1()
 {
-	echo $1	
+	echo $1
 }
 
 
@@ -158,7 +161,7 @@ fnOptimizePARAM() {
 	echo "change=$change" >> $TRACE_FILE
 
 	T=1.0
-	offset=0.1	
+	offset=0.1
 
 	best_lambda=$lambda
 	best_mu=$mu
@@ -183,19 +186,19 @@ fnOptimizePARAM() {
 
 		fnCrossFold $t $C $F $cost $b $lambda $mu $m $U $T
 		f1=$(fnReturnF1)
-		echo "f1=$f1 prev_f1=$prev_f1 offset=$offset" >> $TRACE_FILE	
+		echo "f1=$f1 prev_f1=$prev_f1 offset=$offset" >> $TRACE_FILE
 
 		echo "(1) fnOptimizePARAM() f1=$f1 prev_f1=$prev_f1 offset=$offset"
 		if expr $f1 \> $prev_f1 >/dev/null ; then
 			prev_f1=$(fnSetPrevF1 $f1)
-			
+
 			best_lambda=$(fnSetPrevF1 $lambda)
 			best_mu=$(fnSetPrevF1 $mu)
 			best_cost=$(fnSetPrevF1 $cost)
 
 			fnPrint $t $C $F $cost $b $lambda $mu $m $U
                 else
-                        inc_var=1000                                
+                        inc_var=1000
 		fi
 	done
 
@@ -206,21 +209,21 @@ fnOptimizePARAM() {
 
 	for (( inc_var=1; inc_var<=max_iter_sub; inc_var++ ))
 	do
-		
+
 		if [ $change -gt 2 ]
-                then
-	                lambda=`echo $lambda - $offset | bc`
+    then
+	      lambda=`echo $lambda - $offset | bc`
 		elif [ $change -gt 1 ]
-                then
-        	        mu=`echo $mu - $offset | bc`
-                elif [ $change -gt 0 ]
-                then
-                	cost=`echo $cost - $offset | bc`
-                fi
+    then
+        mu=`echo $mu - $offset | bc`
+    elif [ $change -gt 0 ]
+    then
+      	cost=`echo $cost - $offset | bc`
+    fi
 
 		fnCrossFold $t $C $F $cost $b $lambda $mu $m $U $T
 		f1=$(fnReturnF1)
-		echo "f1=$f1 prev_f1=$prev_f1 offset=$offset" >> $TRACE_FILE	
+		echo "f1=$f1 prev_f1=$prev_f1 offset=$offset" >> $TRACE_FILE
 
 		echo "(2) fnOptimizePARAM() f1=$f1 prev_f1=$prev_f1 offset=$offset"
 		if expr $f1 \> $prev_f1 >/dev/null ; then
@@ -231,8 +234,8 @@ fnOptimizePARAM() {
 			best_cost=$(fnSetPrevF1 $cost)
 
 			fnPrint $t $C $F $cost $b $lambda $mu $m $U
-                else
-                        inc_var=1000                                
+    else
+      inc_var=1000
 		fi
 	done
 
@@ -245,23 +248,23 @@ fnOptimizePARAM() {
 # Optimize the T parameter by incrementing 0.1
 
 fnOptimizeT() {
-	
+
 	at=0.1
 	T=1.1
 	for (( inc_var=1; inc_var<=25; inc_var++ ))
 	do
 		fnCrossFold $t $C $F $cost $b $lambda $mu $m $U $T
 		f1=$(fnReturnF1)
-		echo "f1=$f1 prev_f1=$prev_f1 offset=$at" >> $TRACE_FILE	
+		echo "f1=$f1 prev_f1=$prev_f1 offset=$at" >> $TRACE_FILE
 
 		echo "(1) fnOptimizeT() f1=$f1 prev_f1=$prev_f1 offset=$at"
 		if expr $f1 \> $prev_f1 >/dev/null ; then
 			prev_f1=$(fnSetPrevF1 $f1)
 			fnPrint $t $C $F $cost $b $lambda $mu $m $U
-			
+
 			T=`echo $T + $at | bc`
                 else
-                        inc_var=1000                                
+                        inc_var=1000
 		fi
 	done
 
@@ -270,16 +273,16 @@ fnOptimizeT() {
 	do
 		fnCrossFold $t $C $F $cost $b $lambda $mu $m $U $T
 		f1=$(fnReturnF1)
-		echo "f1=$f1 prev_f1=$prev_f1 offset=$at" >> $TRACE_FILE	
+		echo "f1=$f1 prev_f1=$prev_f1 offset=$at" >> $TRACE_FILE
 
 		echo "(2) fnOptimizeT() f1=$f1 prev_f1=$prev_f1 offset=$at"
 		if expr $f1 \> $prev_f1 >/dev/null ; then
 			prev_f1=$(fnSetPrevF1 $f1)
-			fnPrint $t $C $F $cost $b $lambda $mu $m $U 
-			
+			fnPrint $t $C $F $cost $b $lambda $mu $m $U
+
 			T=`echo $T - $at | bc`
                 else
-                        inc_var=1000                                
+                        inc_var=1000
 		fi
 	done
 }
@@ -288,7 +291,7 @@ fnOptimizeT() {
 # Optimize the d parameter by incrementing 1
 
 fnOptimize_poly_d() {
-	
+
 	at=1
 	best_d=2
 	echo "f1=$f1 prev_f1=$prev_f1 offset=$at"
@@ -297,19 +300,19 @@ fnOptimize_poly_d() {
 		d=$inc_var
 		fnCrossFold $t $C $F $cost $b $lambda $mu $m $U $T
 		f1=$(fnReturnF1)
-	
-		echo "f1=$f1 prev_f1=$prev_f1 offset=$at" >> $TRACE_FILE	
+
+		echo "f1=$f1 prev_f1=$prev_f1 offset=$at" >> $TRACE_FILE
 
 		echo "(1) fnOptimize_poly_d() f1=$f1 prev_f1=$prev_f1 offset=$at"
 		if expr $f1 \> $prev_f1 >/dev/null ; then
 			prev_f1=$(fnSetPrevF1 $f1)
 			fnPrint $t $C $F $cost $b $lambda $mu $m $U
-			best_d=$d		
-                else
-                        inc_var=1000                                
+			best_d=$d
+    else
+      inc_var=1000
 		fi
 	done
-	
+
 	d=$best_d
 }
 #-------------------------------
@@ -327,20 +330,20 @@ fnSelectStartingCostValue() {
 	fnCrossFold $t $C $F $cost $b $lambda $mu $m $U $T
 	prev_f1=$(fnReturnF1)
 
-	fnPrint $t $C $F $cost $b $lambda $mu $m $U 
-	
+	fnPrint $t $C $F $cost $b $lambda $mu $m $U
+
 	cost=1.0
 	f1=0
 	#fnCrossFold $t $C $F $cost $b $lambda $mu $m $U $T
 	#f1=$(fnReturnF1)
 
 	echo "f1=$f1 prev_f1=$prev_f1 " >> $TRACE_FILE
-	
+
 	echo "(1) fnSelectStartingCostValue() f1=$f1 prev_f1=$prev_f1"
 	if expr $f1 \> $prev_f1 >/dev/null ; then
 		prev_f1=$(fnSetPrevF1 $f1)
 		max_iter_sub_cost=8
-		fnPrint $t $C $F $cost $b $lambda $mu $m $U 
+		fnPrint $t $C $F $cost $b $lambda $mu $m $U
 	else
 		cost=0.2
 		max_iter_sub_cost=1
@@ -354,11 +357,11 @@ fnSelectStartingLambdaValue() {
 	lambda=1.0
 	fnCrossFold $t $C $F $cost $b $lambda $mu $m $U $T
 	f1=$(fnReturnF1)
-	
+
 	echo "(1) fnSelectStartingLambdaValue() f1=$f1 prev_f1=$prev_f1"
 	if expr $f1 \> $prev_f1 >/dev/null ; then
 		prev_f1=$(fnSetPrevF1 $f1)
-		fnPrint $t $C $F $cost $b $lambda $mu $m $U 
+		fnPrint $t $C $F $cost $b $lambda $mu $m $U
 		max_iter_sub_lambda=8
 	else
               	lambda=0.4
@@ -379,7 +382,7 @@ fnExp() {
 
 		if [ -n "$PST" ]; then 	# -n tests to see if the argument is non empty
 			# "the variable X is not the empty string"
-	
+
 		#	fnSelectStartingLambdaValue
 
 			# Optimize the lambda parameter
@@ -406,10 +409,10 @@ fnExp() {
 
 		if [ -n "$PST" ]; then 	# -n tests to see if the argument is non empty
 			fnOptimizeT
-		fi	
+		fi
 	else
 		fnRun  $t $C $F $cost $b $lambda $mu $m $U $T
-		
+
 		if [ $findNegatedSentence -gt 0 ]
                 then
 			cd $HyREX_DIR
@@ -417,4 +420,3 @@ fnExp() {
 		fi
 	fi
 }
-
