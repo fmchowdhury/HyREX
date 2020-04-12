@@ -1,15 +1,22 @@
+#!/bin/bash
+
 START_DATE=$(date)
-echo "$START_DATE started running the script ....." 
+echo "$START_DATE started running the script ....."
 
 #-------------------------------------------------------------
 
 source hyrex_sen_run.sh
 
-export HyREX_DIR=FULL_PATH_IN_YOUR_COMPUTER_FOR_HyREX
+export HyREX_DIR=$(pwd)
 
 export DATA_HOME=$HyREX_DIR/sample-data
 
 export SVM_LIGHT_TK=$HyREX_DIR/SVM-Light-TK-1.5
+
+cd $SVM_LIGHT_TK
+make clean
+make
+cd $HyREX_DIR
 
 export OUT_DIR=$HyREX_DIR/out
 
@@ -38,16 +45,29 @@ export CROSS_FOLD="" #-foldFilesFolder  $DATA_HOME/folds"
 
 export JVM_ARGS="-Xmx1048m  -XX:MaxPermSize=512m -cp ./bin:$LIB_DIR/jsre.jar:$LIB_DIR/log4j-1.2.8.jar:$LIB_DIR/commons-digester.jar:$LIB_DIR/commons-collections.jar:$LIB_DIR/commons-logging.jar:$LIB_DIR/commons-beanutils.jar:$LIB_DIR/jutil.jar:$LIB_DIR/libsvm.jar:$LIB_DIR/bioRelEx.jar:$LIB_DIR/stanford-parser-2012-03-09-models.jar:$LIB_DIR/stanford-parser.jar"
 
-rm -rf $OUT_DIR/*
+fnDelFileOrDir() {
+  fn=$1
+  if [[ -f $fn ]]
+  then
+      rm $fn
+  fi
+  if [[ -d $fn ]]
+  then
+      rm -rf $fn
+  fi
+}
+
+fnDelFileOrDir $OUT_DIR
+mkdir $OUT_DIR
 
 START_DATE=$(date)
-echo "$START_DATE started running the script ....." 
+echo "$START_DATE started running the script ....."
 
 export m=1024
 
 #****  NOTE  *****
-# 
-#  This script 
+#
+#  This script
 #
 #********************
 
@@ -80,7 +100,7 @@ export KERNEL_JSRE="SL"	# Possible value: "SL", "LC" and "GC" -- all of them are
 # set parameter values here
 T=1.0
 t=0
-C="V" # + 
+C="V" # +
 F="4"
 cost=0.2
 b=1
@@ -134,7 +154,7 @@ export All_PRED_FILE=$OUT_DIR/base.stat.in
 
 # Leave emtpty string for a parameter if none of the values are to be used
 
-export DT="-wv" #-zhou2005" 	# Possible values: "-dt" and "-wv". 
+export DT="-wv" #-zhou2005" 	# Possible values: "-dt" and "-wv".
 		# "-dt" is for MEDT tree kernel compuation (Chowdhury, Lavelli and Moschitti, BioNLP 2011)
 		# "-wv" is for TPWF vector-based kernel compuation (Chowdhury and Lavelli, EACL 2012)
 
@@ -158,7 +178,7 @@ export KERNEL_JSRE="SL"	# Possible value: "SL", "LC" and "GC" -- all of them are
 # set parameter values here
 T=1.0
 t=502
-C="+" # + 
+C="+" # +
 F="4"
 cost=0.2
 b=1
@@ -198,25 +218,23 @@ export findNegatedSentence=0
 fnExp
 
 
+declare -a tmp_file_list=($OUT_DIR/entPairFileName_DT $OUT_DIR/entPairFileName_JSRE  \
+    $OUT_DIR/entPairFileName_WV  $OUT_DIR/entPairFileName_PST  $OUT_DIR/*.parsed.* \
+    $OUT_DIR/model  $OUT_DIR/base.stat.in  $OUT_DIR/all_vect_by_pair $OUT_DIR/tk \
+    $OUT_DIR/train.* $OUT_DIR/test.* $OUT_DIR/tpwf.* $PRED_FILE)
+
+for fn in "${tmp_file_list[@]}"
+do
+      fnDelFileOrDir $fn
+done
+
 echo ""
 echo "$(date) -> All processing are done. (Started at $START_DATE)"
 echo ""
 echo "Results of evaluation can be found in $OUT_DIR/output.txt"
 echo ""
 
-rm $OUT_DIR/entPairFileName_DT
-rm $OUT_DIR/entPairFileName_JSRE
-rm $OUT_DIR/entPairFileName_WV
-rm $OUT_DIR/entPairFileName_PST
-rm $OUT_DIR/*.parsed.*
-rm $OUT_DIR/model
+
 #rm $OUT_DIR/output.txt
 #rm $OUT_DIR/trace
-rm $OUT_DIR/base.stat.in
 #rm $OUT_DIR/extracted_relations.txt
-rm $OUT_DIR/all_vect_by_pair
-rm -r $OUT_DIR/tk
-rm $OUT_DIR/train.*
-rm $OUT_DIR/test.*
-rm $OUT_DIR/tpwf.*
-rm $PRED_FILE
