@@ -5,7 +5,7 @@ echo "$START_DATE started running the script ....."
 
 source hyrex_sen_run.sh
 
-export HyREX_DIR=/media/Study/workspace/HyREX
+export HyREX_DIR=FULL_PATH_IN_YOUR_COMPUTER_FOR_HyREX
 
 export DATA_HOME=$HyREX_DIR/sample-data
 
