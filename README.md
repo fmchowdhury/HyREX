@@ -37,9 +37,13 @@ To run this software, please download the following jar files and place them und
 
 ### Data to train the system
 
-There are 2 sample files inside `sample-data` folder which shows format for the input data.
+Please check [data_format](https://github.com/fmchowdhury/HyREX/blob/master/data_format) for input data format. There are 2 sample files inside `sample-data` folder according to that format.
 
 To replicate the results of the SemEval-2013 DDI Extraction task, obtain annotated training data from https://www.cs.york.ac.uk/semeval-2013/task9/index.php%3Fid=data.html . Please convert them into the format of the sample files.
+
+There are a number of data pre-processing classes inside`src/DataProcessor` for a number of benchmark datasets for different RE tasks. You can either use them or write your own custom codes to preprocess your input data.</br>
+You can use `src/Utility/SyntacticParser.java` to parse your input text into the desired format specified in the sample files.
+
 
 ### How to run the system
 
@@ -47,7 +51,18 @@ To run it, open terminal, `cd` to the `HypRex` folder and run the following comm
 
 `sh hyrex_run.sh`
 
-(Make sure hyrex_sen_run.sh and hyrex_run.sh have execution and write permission.)
+Make sure hyrex_sen_run.sh and hyrex_run.sh have execution and write permission.
+
+Also, please remember to provide values for the following parameters inside the `hyrex_run.sh` file -
+
+- `TRAIN_DATA_FULL`: a single file containing your training data in the format like `sample-data/sample.full`
+- `TRAIN_DATA_PARSED`: a single file containing parsed output of your training data in the format like `sample-data/sample.parsed.bllip.complete`
+
+- `HELDOUT_DATA_FULL`: Same as `TRAIN_DATA_FULL` (or a seprate development dataset) to be used for parameter tuning.
+- `HELDOUT_DATA_PARSED`: Same as `TRAIN_DATA_PARSED` (or a seprate development dataset) to be used for parameter tuning.
+
+- `TEST_DATA_FULL`: Your test data in the format like `sample-data/sample.full`
+- `TEST_DATA_PARSED`: Your test data in the format like `sample-data/sample.parsed.bllip.complete`
 
 
 -- Faisal
