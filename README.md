@@ -1,6 +1,14 @@
 HyREX
 =====
 
+**`HyREX`** stands for **Hybrid Relation Extractor**. It is a multi-phase hybrid kernel based approach for supervised relation extraciton that -
+
+- combines a feature based kernel (Chowdhury and Lavelli, *EACL 2012*), Shallow Linguistic (SL)
+kernel (Giuliano et al., *EACL 2006*), Path-enclosed Tree (PET) kernel (Moschitti, *ACL 2004*)
+- exploits scope of negations (Chowdhury and Lavelli, *NAACL 2013*)
+- discards uninformative training instances using semantic roles and contextual evidence (Chowdhury and Lavelli, *COLING 2012*)
+
+
 This software is distributed under Apache License 2.0.
 
 Modification, redistribution or any other usage of this software is permitted without any restriction, given that the following papers are cited:
@@ -35,8 +43,7 @@ To run this software, please download the following jar files and place them und
 
 There are 2 sample files inside `sample-data` folder which shows format for the input data.
 
-Annotated training data can be obtained from https://www.cs.york.ac.uk/semeval-2013/task9/index.php%3Fid=data.html .
-Please convert them into the format of the sample files.
+To replicate the results of the SemEval-2013 DDI Extraction task, obtain annotated training data from https://www.cs.york.ac.uk/semeval-2013/task9/index.php%3Fid=data.html . Please convert them into the format of the sample files.
 
 ### How to run the system
 
