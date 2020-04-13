@@ -14,7 +14,7 @@ This software is distributed under Apache License 2.0.
 Modification, redistribution or any other usage of this software is permitted without any restriction, given that the following papers are cited:
 
 ```
-[1] Md Faisal Mahbub Chowdhury and Alberto Lavelli, "Exploiting Scopes of Negations and Heterogeneous Features for Relation Extraction: A Case Study for Drug-Drug Interaction Extraction", NAACL 2013
+[1] Md Faisal Mahbub Chowdhury, Alberto Lavelli, "Exploiting Scopes of Negations and Heterogeneous Features for Relation Extraction: A Case Study for Drug-Drug Interaction Extraction", NAACL 2013
 [2] Md Faisal Mahbub Chowdhury, Alberto Lavelli, "FBK-irst: A Multi-Phase Kernel Based Approach for Drug-Drug Interaction Detection and Classification that Exploits Linguistic Information", SemEval 2013
 ```
 
