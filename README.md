@@ -24,7 +24,7 @@ To run this software, please download the following jar files and place them und
 1. lvg2012api.jar
 2. lvg2012dist.jar
 
-(Download `lvg2012.tgz` from https://lexsrv2.nlm.nih.gov/LexSysGroup/Projects/lvg/2012/release/lvg2012.tgz , unzip it, go inside the `lib` folder inside the unzipped folder and you will find those 2 jars.)
+(Download `lvg2012.tgz` from https://lexsrv3.nlm.nih.gov/LexSysGroup/Projects/lvg/2012/release/lvg2012.tgz , unzip it, go inside the `lib` folder inside the unzipped folder and you will find those 2 jars.)
 
 3. stanford-parser-2012-03-09-models.jar
 4. stanford-parser.jar
