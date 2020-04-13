@@ -1,8 +1,7 @@
 HyREX
 =====
 
-**`HyREX`** stands for **Hybrid Relation Extractor**. </br>
-It is a multi-phase hybrid kernel based approach -
+**`HyREX`** stands for **Hybrid Relation Extractor**. It is a multi-phase hybrid kernel based approach -
 
 - combines a feature based kernel (Chowdhury and Lavelli, *EACL 2012*), Shallow Linguistic (SL)
 kernel (Giuliano et al., *EACL 2006*), Path-enclosed Tree (PET) kernel (Moschitti, *ACL 2004*)
