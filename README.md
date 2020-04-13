@@ -3,8 +3,7 @@ HyREX
 
 **`HyREX`** stands for **Hybrid Relation Extractor**. It is a multi-phase hybrid kernel based approach -
 
-- combines a feature based kernel (Chowdhury and Lavelli, *EACL 2012*), Shallow Linguistic (SL)
-kernel (Giuliano et al., *EACL 2006*), Path-enclosed Tree (PET) kernel (Moschitti, *ACL 2004*)
+- combines a feature based kernel (Chowdhury and Lavelli, *EACL 2012*), Shallow Linguistic kernel (Giuliano et al., *EACL 2006*), Path-enclosed Tree kernel (Moschitti, *ACL 2004*)
 - exploits scope of negations (Chowdhury and Lavelli, *NAACL 2013*)
 - discards uninformative training instances using semantic roles and contextual evidence (Chowdhury and Lavelli, *COLING 2012*)
 
